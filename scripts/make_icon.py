@@ -17,9 +17,9 @@ except ImportError:
 OUT = sys.argv[1] if len(sys.argv) > 1 else "."
 S = 1024
 
-# Brand gradient stops (top-left -> bottom-right).
-C0 = (92, 140, 255)    # blue  #5C8CFF
-C1 = (140, 92, 255)    # violet #8C5CFF
+# Brand gradient stops (top-left -> bottom-right). Punchy blue -> violet.
+C0 = (56, 150, 255)    # bright blue  #3896FF
+C1 = (166, 77, 255)    # vivid violet #A64DFF
 
 
 def gradient(size):
@@ -65,10 +65,6 @@ def draw_glyph(img):
     def on_circle(deg):
         a = math.radians(deg)
         return (cx + R * math.cos(a), cy + R * math.sin(a)), a
-
-    # Rounded cap on the tail end only.
-    (sx, sy), _ = on_circle(start_deg)
-    d.ellipse([sx - stroke / 2, sy - stroke / 2, sx + stroke / 2, sy + stroke / 2], fill=white)
 
     # Arrowhead at the head end, aligned to the (clockwise) tangent.
     (px, py), a = on_circle(end_deg)
