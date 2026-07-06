@@ -1,0 +1,102 @@
+name: LiveLoop
+options:
+  bundleIdPrefix: com.adrbn
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  defaultConfig: Release
+
+settings:
+  base:
+    DEVELOPMENT_TEAM: 2TWQF4T93E
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "Apple Development"
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_HARDENED_RUNTIME: YES
+    # Team identifier prefix is injected at sign time; kept here for reference.
+    INFOPLIST_KEY_LSUIElement: YES
+
+targets:
+  # ---------------------------------------------------------------------------
+  # Main menu-bar application (the control plane)
+  # ---------------------------------------------------------------------------
+  LiveLoop:
+    type: application
+    platform: macOS
+    sources:
+      - path: LiveLoop
+    info:
+      path: LiveLoop/Info.plist
+      properties:
+        LSUIElement: true
+        CFBundleDisplayName: LiveLoop
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSCameraUsageDescription: "LiveLoop records short clips from your webcam and streams them (or your live feed) through its virtual camera."
+        NSMicrophoneUsageDescription: "LiveLoop does not use your microphone; audio always passes straight through to your meeting app."
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.adrbn.LiveLoop
+        PRODUCT_NAME: LiveLoop
+        CODE_SIGN_ENTITLEMENTS: LiveLoop/LiveLoop.entitlements
+        ENABLE_APP_SANDBOX: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    dependencies:
+      - target: LiveLoopExtension
+        embed: true
+        codeSign: true
+
+  # ---------------------------------------------------------------------------
+  # CMIO camera system extension (the virtual camera relay)
+  # ---------------------------------------------------------------------------
+  LiveLoopExtension:
+    type: system-extension
+    platform: macOS
+    sources:
+      - path: LiveLoopExtension
+      - path: LiveLoop/Shared/SharedConstants.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.adrbn.LiveLoop.Extension
+        PRODUCT_NAME: LiveLoopExtension
+        CODE_SIGN_ENTITLEMENTS: LiveLoopExtension/LiveLoopExtension.entitlements
+        ENABLE_APP_SANDBOX: YES
+        INFOPLIST_FILE: LiveLoopExtension/Info.plist
+        SWIFT_OBJC_BRIDGING_HEADER: ""
+
+  # ---------------------------------------------------------------------------
+  # Unit tests (pure-logic engine + library)
+  # ---------------------------------------------------------------------------
+  LiveLoopTests:
+    type: bundle.unit-test
+    platform: macOS
+    # Compile the pure-logic sources straight into the bundle so tests run
+    # headless — no app host, no @testable, works under plain `xcodebuild test`.
+    sources:
+      - path: Tests/LiveLoopTests
+      - path: LiveLoop/Loop/SplitMix64.swift
+      - path: LiveLoop/Loop/PingPongSequencer.swift
+      - path: LiveLoop/Loop/LagScheduler.swift
+      - path: LiveLoop/Library/Clip.swift
+      - path: LiveLoop/Library/ClipLibrary.swift
+      - path: LiveLoop/Shared/SharedConstants.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.adrbn.LiveLoopTests
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGNING_ALLOWED: NO
+
+schemes:
+  LiveLoop:
+    build:
+      targets:
+        LiveLoop: all
+        LiveLoopExtension: all
+    run:
+      config: Release
+    test:
+      config: Release
+      targets:
+        - LiveLoopTests
