@@ -1,0 +1,20 @@
+# Build products
+build/
+dist/
+DerivedData/
+*.dmg
+
+# XcodeGen output (regenerate with `xcodegen generate`)
+*.xcodeproj
+
+# macOS / Xcode cruft
+.DS_Store
+xcuserdata/
+*.xcuserstate
+*.moved-aside
+*.pbxuser
+!default.pbxuser
+
+# Swift Package Manager
+.build/
+.swiftpm/
