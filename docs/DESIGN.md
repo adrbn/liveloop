@@ -64,25 +64,35 @@ A clip is decoded once into an in-memory array of **JPEG frames**
 take — and decoded on demand. Ping-pong needs random access both directions,
 which this gives cheaply.
 
-## Signing reality
+## Signing reality (a paid account is required)
 
 A CMIO camera extension carries the **restricted** entitlement
-`com.apple.developer.system-extension.install`. With System Integrity Protection
-enabled (the default), macOS will only:
+`com.apple.developer.system-extension.install`. Authorizing it needs a
+provisioning profile with the **System Extension** capability, and that
+capability is **not available to free / personal Apple teams**:
 
-- **launch** an app carrying that entitlement if a provisioning profile
-  authorizes it (a paid-account / Developer ID concern), and
-- **activate** the extension if it is Developer ID-signed **and** notarized, *or*
-  if system-extension developer mode is on (which itself requires SIP off).
+```
+error: Cannot create a Mac App Development provisioning profile … Personal
+development teams … do not support the System Extension capability.
+```
 
-Consequently:
+Without that profile, `sysextensiond` refuses to activate the extension and
+reports the misleading *“Extension not found in App bundle”* — and this holds
+**even with SIP disabled and `systemextensionsctl developer on`.** Developer mode
+only relaxes the *notarization* requirement, not the requirement that the
+entitlement be authorized by a profile. Verified empirically on macOS 27 / Apple
+Silicon.
 
-- **Distribution / other Macs:** Developer ID + notarization. No system changes
-  for the end user.
-- **Self-signed personal use:** disable SIP once and enable
-  `systemextensionsctl developer on`.
+So there are exactly two viable paths, both needing a **paid** Apple Developer
+Program membership:
 
-The code is identical either way; only the certificate differs.
+- **Distribution / other Macs:** Developer ID Application signature + notarization.
+  Activates with SIP on; nothing for the end user to disable.
+- **Local development:** a development provisioning profile (with the System
+  Extension capability) + `systemextensionsctl developer on` (which needs SIP
+  off). Lets you iterate on a non-notarized build.
+
+The code is identical either way; only the certificate/profile differs.
 
 ## Testing
 
