@@ -64,36 +64,34 @@ Grab `LiveLoop-x.y.z.dmg` from [Releases](../../releases), open it, and drag
 **LiveLoop** to Applications.
 
 > [!IMPORTANT]
-> **macOS only activates a virtual-camera *system extension* that it trusts.**
-> How you sign LiveLoop decides whether it can turn on. Pick one:
+> **A camera *system extension* requires a paid Apple Developer account to run.**
+> This is an Apple platform rule, not a limitation of this code. Activating the
+> extension needs the `com.apple.developer.system-extension.install` entitlement,
+> and **free / personal Apple teams cannot provision the System Extension
+> capability** — Xcode returns *“Personal development teams … do not support the
+> System Extension capability.”* Without a paid team's provisioning profile,
+> `sysextensiond` rejects the extension (*“Extension not found in App bundle”*)
+> **even with SIP disabled and developer mode on.** There is no free path.
 
-### Option A — Signed & notarized (recommended, no system changes)
+### For distribution (recommended, works on any Mac)
 
-Build (or download) a LiveLoop signed with a **Developer ID** certificate and
-**notarized** by Apple. It then installs and activates on any Mac with System
-Integrity Protection **on**, exactly like any other app. This is the path for
-sharing LiveLoop with other people. See
+Sign with a **Developer ID Application** certificate and **notarize** the app. It
+then installs and activates with System Integrity Protection **on**, like any
+other app — nothing for the end user to disable. See
 [Signing & notarization](#signing--notarization).
 
-### Option B — Self-signed, for your own Mac
+### For local development (paid team)
 
-A self-signed / personal-team build is blocked by macOS unless you allow
-developer system extensions, which requires turning SIP off once:
+With a **paid** team you can run a development-signed build by turning on
+system-extension developer mode (this step does require SIP off):
 
-1. Reboot into **Recovery** (hold the power button on Apple Silicon), open
-   **Terminal**, and run:
-   ```
-   csrutil disable
-   ```
-2. Reboot, then in a normal Terminal:
-   ```
-   systemextensionsctl developer on
-   ```
-3. Open LiveLoop → **Set up LiveLoop** → **Install Camera**, and approve it in
-   **System Settings ▸ General ▸ Login Items & Extensions ▸ Camera Extensions**.
+```
+csrutil disable                          # once, from Recovery
+sudo systemextensionsctl developer on    # then reboot
+```
 
-> Prefer to keep SIP on? Use Option A. LiveLoop is built so the only difference is
-> the certificate it’s signed with — the code is identical.
+Then open LiveLoop → **Set up LiveLoop** → **Install Camera**, and approve it in
+**System Settings ▸ General ▸ Login Items & Extensions ▸ Camera Extensions**.
 
 Once the camera is installed: open your meeting app, choose **LiveLoop** as the
 camera, click **Start Camera** in the menu bar, and use the shortcut

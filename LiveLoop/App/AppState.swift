@@ -71,13 +71,6 @@ final class AppState: ObservableObject {
 
         selectedClipID = library.clips.first?.id
         refreshExtensionStatus()
-
-        // Test/automation hook: trigger extension activation without UI.
-        if ProcessInfo.processInfo.environment["LIVELOOP_AUTOINSTALL"] == "1" {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
-                self?.installExtension()
-            }
-        }
     }
 
     // MARK: - Extension status
