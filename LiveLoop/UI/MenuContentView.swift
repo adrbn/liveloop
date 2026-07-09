@@ -238,7 +238,10 @@ struct MenuContentView: View {
     // MARK: - Install banner
 
     private var installBanner: some View {
-        Button { openWindow(id: "onboarding") } label: {
+        Button {
+            openWindow(id: "onboarding")
+            NSApp.activate(ignoringOtherApps: true)
+        } label: {
             HStack(spacing: 8) {
                 Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
                 VStack(alignment: .leading, spacing: 1) {
@@ -299,14 +302,23 @@ struct MenuContentView: View {
     // MARK: - Footer
 
     private var footer: some View {
-        HStack {
-            Button { openSettings() } label: { Label("Settings", systemImage: "gearshape") }
-                .buttonStyle(.plain)
+        HStack(spacing: 16) {
             Spacer()
-            Button("Quit") { NSApplication.shared.terminate(nil) }
-                .buttonStyle(.plain).foregroundStyle(.secondary)
+            Button {
+                openSettings()
+                NSApp.activate(ignoringOtherApps: true)
+            } label: {
+                Image(systemName: "gearshape.fill").font(.system(size: 16))
+            }
+            .buttonStyle(.plain).foregroundStyle(.secondary)
+            .help("Settings")
+
+            Button { NSApplication.shared.terminate(nil) } label: {
+                Image(systemName: "xmark").font(.system(size: 16, weight: .semibold))
+            }
+            .buttonStyle(.plain).foregroundStyle(.secondary)
+            .help("Quit LiveLoop")
         }
-        .font(.caption)
     }
 
     // MARK: - Status helpers
