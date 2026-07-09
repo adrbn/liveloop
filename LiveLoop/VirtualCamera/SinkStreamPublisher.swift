@@ -87,6 +87,19 @@ final class SinkStreamPublisher {
         findDevice(uid: LiveLoop.deviceUID) != nil
     }
 
+    /// Calls `handler` whenever the set of CMIO devices changes (the virtual
+    /// camera being installed, replaced, or removed) so the app can keep its
+    /// "installed?" state live instead of caching a stale value at launch.
+    static func observeDeviceChanges(on queue: DispatchQueue = .main,
+                                     _ handler: @escaping () -> Void) {
+        var address = CMIOObjectPropertyAddress(
+            mSelector: CMIOObjectPropertySelector(kCMIOHardwarePropertyDevices),
+            mScope: CMIOObjectPropertyScope(kCMIOObjectPropertyScopeGlobal),
+            mElement: CMIOObjectPropertyElement(kCMIOObjectPropertyElementMain))
+        CMIOObjectAddPropertyListenerBlock(
+            CMIOObjectID(kCMIOObjectSystemObject), &address, queue) { _, _ in handler() }
+    }
+
     /// Enqueues one frame for the extension to broadcast. Silently drops the
     /// frame if the sink queue is full (the consumer is momentarily behind) so
     /// we never block the capture pipeline.

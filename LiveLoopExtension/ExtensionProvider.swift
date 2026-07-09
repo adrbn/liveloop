@@ -162,6 +162,8 @@ final class ExtensionDeviceSource: NSObject, CMIOExtensionDeviceSource {
     func startStreaming() {
         guard _bufferPool != nil else { return }
         _streamingCounter += 1
+        // First consumer just attached — tell the app to bring the webcam up.
+        if _streamingCounter == 1 { LiveLoop.ConsumerSignal.post(active: true) }
         startPlaceholderTimer()
     }
 
@@ -171,6 +173,8 @@ final class ExtensionDeviceSource: NSObject, CMIOExtensionDeviceSource {
         } else {
             _streamingCounter = 0
             stopPlaceholderTimer()
+            // Last consumer left — the app can put the webcam back to sleep.
+            LiveLoop.ConsumerSignal.post(active: false)
         }
     }
 

@@ -9,6 +9,32 @@
 import SwiftUI
 import AVFoundation
 
+extension Color {
+    /// LiveLoop's brand tint — the indigo midpoint of the blue→violet icon.
+    static let brand = Color(red: 0.42, green: 0.44, blue: 0.96)
+}
+
+enum Links {
+    static let github = URL(string: "https://github.com/adrbn/liveloop")!
+    static let kofi = URL(string: "https://ko-fi.com/adrbn")!
+}
+
+/// Resolves the NSWindow hosting a SwiftUI view — used to scope key shortcuts to
+/// the menu-bar panel. Reports the window whenever it changes (including nil).
+struct WindowAccessor: NSViewRepresentable {
+    let onResolve: (NSWindow?) -> Void
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async { onResolve(view.window) }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async { onResolve(nsView.window) }
+    }
+}
+
 /// Async, cached first-frame thumbnails for clips (keyed by url + size).
 actor ThumbnailCache {
     static let shared = ThumbnailCache()

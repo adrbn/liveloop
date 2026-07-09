@@ -73,6 +73,31 @@ final class ClipLibraryTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: path))
     }
 
+    func testRestoreBringsBackDeletedClip() throws {
+        let library = ClipLibrary(directory: tempDir)
+        let clip = try XCTUnwrap(library.add(movingFileAt: makeTempFile("keep"), name: "Undo", duration: 1))
+        let path = library.url(for: clip).path
+
+        library.delete(clip)
+        XCTAssertTrue(library.clips.isEmpty)
+
+        XCTAssertTrue(library.restore(clip), "restore should succeed while the file is still in the trash")
+        XCTAssertEqual(library.clips.map(\.id), [clip.id])
+        XCTAssertTrue(FileManager.default.fileExists(atPath: path))
+        XCTAssertEqual(try String(contentsOf: library.url(for: clip), encoding: .utf8), "keep")
+    }
+
+    func testTrashIsClearedOnRelaunch() throws {
+        let library = ClipLibrary(directory: tempDir)
+        let clip = try XCTUnwrap(library.add(movingFileAt: makeTempFile(), name: "Gone", duration: 1))
+        library.delete(clip)
+
+        // A fresh library (new session) empties the trash, so the deletion is final.
+        let relaunched = ClipLibrary(directory: tempDir)
+        XCTAssertFalse(relaunched.restore(clip), "a clip deleted in a previous session is not recoverable")
+        XCTAssertTrue(relaunched.clips.isEmpty)
+    }
+
     func testExportCopiesFile() throws {
         let library = ClipLibrary(directory: tempDir)
         let clip = try XCTUnwrap(library.add(movingFileAt: makeTempFile("payload"), name: "Exp", duration: 1))

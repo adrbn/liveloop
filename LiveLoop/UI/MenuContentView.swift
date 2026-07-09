@@ -14,19 +14,26 @@ struct MenuContentView: View {
     @EnvironmentObject private var app: AppState
     @Environment(\.openSettings) private var openSettings
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let panelWidth: CGFloat = 340
+    private let maxVisibleClips = 4
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             header
+            if app.banner != nil { statusBanner }
             previewCard
 
             if !app.extensionInstalled {
                 installBanner
+                    .transition(.opacity.combined(with: .move(edge: .top)))
             }
 
-            if app.isEngaged { controls }
+            if app.isEngaged {
+                controls
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
 
             Divider()
             clipSection
@@ -35,7 +42,15 @@ struct MenuContentView: View {
         }
         .padding(14)
         .frame(width: panelWidth)
-        .onAppear { app.refreshExtensionStatus(); app.refreshCameras() }
+        .tint(.brand)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: app.banner)
+        .animation(reduceMotion ? nil : .spring(response: 0.34, dampingFraction: 0.9), value: app.isEngaged)
+        .animation(reduceMotion ? nil : .spring(response: 0.34, dampingFraction: 0.9), value: app.extensionInstalled)
+        .background(WindowAccessor { app.panelWindow = $0 })
+        .onAppear {
+            app.refreshExtensionStatus()
+            app.refreshCameras()
+        }
     }
 
     // MARK: - Header
@@ -54,6 +69,56 @@ struct MenuContentView: View {
             }
             Spacer()
             Circle().fill(statusColor).frame(width: 9, height: 9)
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: statusColor)
+        }
+    }
+
+    // MARK: - Status banner
+
+    private var statusBanner: some View {
+        HStack(spacing: 8) {
+            if let banner = app.banner {
+                Image(systemName: bannerIcon(banner.kind))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(bannerColor(banner.kind))
+                Text(banner.text)
+                    .font(.caption)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 4)
+                if banner.kind == .working {
+                    ProgressView().controlSize(.small)
+                } else {
+                    Button { app.dismissBanner() } label: {
+                        Image(systemName: "xmark").font(.system(size: 10, weight: .bold))
+                    }
+                    .buttonStyle(.plain).foregroundStyle(.secondary)
+                    .accessibilityLabel("Dismiss")
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 10).padding(.vertical, 8)
+        .background((app.banner.map { bannerColor($0.kind) } ?? .clear).opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 9))
+        .transition(.move(edge: .top).combined(with: .opacity))
+    }
+
+    private func bannerIcon(_ kind: AppBanner.Kind) -> String {
+        switch kind {
+        case .success: return "checkmark.circle.fill"
+        case .failure: return "exclamationmark.triangle.fill"
+        case .info:    return "info.circle.fill"
+        case .working: return "arrow.triangle.2.circlepath"
+        }
+    }
+
+    private func bannerColor(_ kind: AppBanner.Kind) -> Color {
+        switch kind {
+        case .success: return .green
+        case .failure: return .red
+        case .info:    return .brand
+        case .working: return .orange
         }
     }
 
@@ -149,7 +214,7 @@ struct MenuContentView: View {
         case .loop:
             badge("LOOP", color: .orange, icon: "repeat")
         case .live:
-            badge("LIVE", color: .green, icon: "dot.radiowaves.left.and.right")
+            badge("LIVE", color: .red, icon: "dot.radiowaves.left.and.right")
         case .idle:
             EmptyView()
         }
@@ -179,8 +244,8 @@ struct MenuContentView: View {
 
     // MARK: - Controls
 
-    @ViewBuilder
     private var controls: some View {
+        VStack(alignment: .leading, spacing: 10) {
         Button { app.toggleLoopLive() } label: {
             actionRow(title: app.isLoopActive ? "Switch back to live camera" : "Switch to Loop",
                       subtitle: app.isLoopActive
@@ -197,10 +262,11 @@ struct MenuContentView: View {
             Button {
                 app.isRecording ? app.stopRecording() : app.startRecording()
             } label: {
-                Label(app.isRecording ? "Stop recording"
+                Label(app.isRecording ? "Stop · \(app.recordSecondsLeft)s"
                                       : "Record \(Int(app.settings.recordDurationSeconds))s clip",
                       systemImage: app.isRecording ? "stop.fill" : "record.circle")
                     .frame(maxWidth: .infinity)
+                    .monospacedDigit()
             }
             .tint(app.isRecording ? .red : nil)
 
@@ -208,8 +274,10 @@ struct MenuContentView: View {
                 Label("Stop camera", systemImage: "power").labelStyle(.iconOnly)
             }
             .help("Stop the virtual camera")
+            .accessibilityLabel("Stop camera")
         }
         .controlSize(.large)
+        }
     }
 
     private var currentClipName: String { app.currentClip?.name ?? "a clip" }
@@ -262,13 +330,21 @@ struct MenuContentView: View {
 
     private var clipSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack {
+            HStack(spacing: 6) {
                 Text("Clips").font(.subheadline).bold()
+                if app.library.clips.count > 1 {
+                    Text("↑↓")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.tertiary)
+                        .help("↑ ↓ browse clips · ⌫ delete · ⌘Z undo")
+                }
                 Spacer()
                 Button(action: importClip) {
-                    Label("Import", systemImage: "square.and.arrow.down").font(.caption)
+                    Image(systemName: "square.and.arrow.down").font(.system(size: 13))
                 }
                 .buttonStyle(.plain).foregroundStyle(.secondary)
+                .help("Import a clip")
+                .accessibilityLabel("Import a clip")
             }
 
             if app.library.clips.isEmpty {
@@ -277,24 +353,37 @@ struct MenuContentView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.vertical, 6)
             } else {
-                ScrollView {
-                    VStack(spacing: 2) {
-                        ForEach(app.library.clips) { clip in
-                            ClipRow(clip: clip,
-                                    url: app.library.url(for: clip),
-                                    isSelected: clip.id == app.selectedClipID,
-                                    onSelect: { app.selectClip(clip) },
-                                    onRename: { newName in app.library.rename(clip, to: newName) },
-                                    onPin: { app.library.setPinned(clip, !clip.pinned) },
-                                    onExport: { exportClip(clip) },
-                                    onDelete: { app.library.delete(clip) })
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            ForEach(app.library.clips) { clip in
+                                ClipRow(clip: clip,
+                                        url: app.library.url(for: clip),
+                                        isSelected: clip.id == app.selectedClipID,
+                                        onSelect: { app.selectClip(clip) },
+                                        onRename: { newName in app.library.rename(clip, to: newName) },
+                                        onPin: { app.library.setPinned(clip, !clip.pinned) },
+                                        onExport: { exportClip(clip) },
+                                        onDelete: { app.deleteClip(clip) })
+                                    .id(clip.id)
+                                    .transition(.move(edge: .leading).combined(with: .opacity))
+                            }
+                        }
+                    }
+                    .scrollIndicators(.hidden)
+                    // Exactly N rows tall (no half-row peeking) — and a definite
+                    // height so the ScrollView doesn't collapse in this tall panel.
+                    .frame(height: CGFloat(min(app.library.clips.count, maxVisibleClips)) * ClipRow.height)
+                    // Keep the arrow-key-selected clip in view.
+                    .onChange(of: app.selectedClipID) { _, id in
+                        guard let id else { return }
+                        if reduceMotion {
+                            proxy.scrollTo(id, anchor: .center)
+                        } else {
+                            withAnimation(.easeOut(duration: 0.18)) { proxy.scrollTo(id, anchor: .center) }
                         }
                     }
                 }
-                .scrollIndicators(.hidden)
-                // A definite height — a ScrollView with only maxHeight collapses
-                // to zero inside this tall panel.
-                .frame(height: min(CGFloat(app.library.clips.count) * 44 + 2, 176))
             }
         }
     }
@@ -302,23 +391,38 @@ struct MenuContentView: View {
     // MARK: - Footer
 
     private var footer: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 13) {
+            Link(destination: Links.github) {
+                Image("GitHubMark").renderingMode(.template).resizable().frame(width: 14, height: 14)
+            }
+            .help("Source on GitHub")
+            .accessibilityLabel("Source on GitHub")
+
+            Link(destination: Links.kofi) {
+                Image(systemName: "cup.and.saucer.fill").font(.system(size: 12))
+            }
+            .help("Support on Ko-fi")
+            .accessibilityLabel("Support LiveLoop on Ko-fi")
+
             Spacer()
+
             Button {
                 openSettings()
                 NSApp.activate(ignoringOtherApps: true)
             } label: {
-                Image(systemName: "gearshape.fill").font(.system(size: 16))
+                Image(systemName: "gearshape.fill").font(.system(size: 13))
             }
-            .buttonStyle(.plain).foregroundStyle(.secondary)
             .help("Settings")
+            .accessibilityLabel("Settings")
 
             Button { NSApplication.shared.terminate(nil) } label: {
-                Image(systemName: "xmark").font(.system(size: 16, weight: .semibold))
+                Image(systemName: "xmark").font(.system(size: 13, weight: .semibold))
             }
-            .buttonStyle(.plain).foregroundStyle(.secondary)
             .help("Quit LiveLoop")
+            .accessibilityLabel("Quit LiveLoop")
         }
+        .buttonStyle(.plain)
+        .foregroundStyle(.secondary)
     }
 
     // MARK: - Status helpers
@@ -336,8 +440,8 @@ struct MenuContentView: View {
         if app.isRecording { return .red }
         switch app.mode {
         case .loop: return .orange
-        case .live: return .green
-        case .idle: return app.extensionInstalled ? .secondary : .orange
+        case .live: return .red
+        case .idle: return app.extensionInstalled ? .green : .orange
         }
     }
 
@@ -374,6 +478,8 @@ struct MenuContentView: View {
 // MARK: - Clip row
 
 private struct ClipRow: View {
+    static let height: CGFloat = 44
+
     let clip: Clip
     let url: URL
     let isSelected: Bool
@@ -385,6 +491,7 @@ private struct ClipRow: View {
 
     @State private var isEditing = false
     @State private var editText = ""
+    @State private var isHovered = false
 
     var body: some View {
         HStack(spacing: 9) {
@@ -406,7 +513,7 @@ private struct ClipRow: View {
                     Image(systemName: "pin.fill").font(.caption2).foregroundStyle(.orange)
                 }
                 if isSelected {
-                    Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.accentColor)
+                    Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.brand)
                 }
                 Menu {
                     Button("Rename…", action: startEditing)
@@ -420,11 +527,18 @@ private struct ClipRow: View {
                 .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().frame(width: 18)
             }
         }
-        .padding(.vertical, 5).padding(.horizontal, 6)
-        .background(isSelected ? Color.accentColor.opacity(0.10) : .clear)
+        .padding(.horizontal, 6)
+        .frame(height: Self.height)
+        .background(rowBackground)
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .contentShape(Rectangle())
         .onTapGesture { if !isEditing { onSelect() } }
+        .onHover { isHovered = $0 }
+    }
+
+    private var rowBackground: Color {
+        if isSelected { return Color.brand.opacity(0.12) }
+        return isHovered ? Color.primary.opacity(0.06) : .clear
     }
 
     private func startEditing() {

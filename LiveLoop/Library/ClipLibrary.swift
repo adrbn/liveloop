@@ -21,11 +21,15 @@ final class ClipLibrary: ObservableObject {
 
     let directory: URL
     private var metadataURL: URL { directory.appendingPathComponent("metadata.json") }
+    /// Where `delete` parks a clip's file so an in-session undo can bring it back.
+    private var trashDirectory: URL { directory.appendingPathComponent(".trash", isDirectory: true) }
 
     init(directory: URL = ClipLibrary.defaultDirectory()) {
         self.directory = directory
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         load()
+        // Clips deleted in a previous session can't be undone anymore — discard them.
+        try? FileManager.default.removeItem(at: trashDirectory)
     }
 
     // MARK: - Locations
@@ -111,10 +115,35 @@ final class ClipLibrary: ObservableObject {
 
     // MARK: - Delete
 
+    /// Removes a clip from the library, parking its file in the trash so the
+    /// deletion can be undone within the session (see `restore`).
     func delete(_ clip: Clip) {
-        try? FileManager.default.removeItem(at: url(for: clip))
+        let source = url(for: clip)
+        if FileManager.default.fileExists(atPath: source.path) {
+            try? FileManager.default.createDirectory(at: trashDirectory, withIntermediateDirectories: true)
+            let parked = trashDirectory.appendingPathComponent(clip.fileName)
+            try? FileManager.default.removeItem(at: parked)   // clear any stale copy
+            try? FileManager.default.moveItem(at: source, to: parked)
+        }
         clips = clips.filter { $0.id != clip.id }
         persist()
+    }
+
+    /// Brings a just-deleted clip back (undo): moves its file out of the trash
+    /// and re-inserts it. Returns false if the file is no longer recoverable.
+    @discardableResult
+    func restore(_ clip: Clip) -> Bool {
+        guard !clips.contains(where: { $0.id == clip.id }) else { return true }
+        let destination = url(for: clip)
+        let parked = trashDirectory.appendingPathComponent(clip.fileName)
+        if !FileManager.default.fileExists(atPath: destination.path),
+           FileManager.default.fileExists(atPath: parked.path) {
+            try? FileManager.default.moveItem(at: parked, to: destination)
+        }
+        guard FileManager.default.fileExists(atPath: destination.path) else { return false }
+        clips = sorted(clips + [clip])
+        persist()
+        return true
     }
 
     // MARK: - Persistence

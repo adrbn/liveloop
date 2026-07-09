@@ -51,6 +51,22 @@ enum LiveLoop {
         static let cameraName = "cameraName"
     }
 
+    /// Cross-process Darwin notifications the extension posts when a meeting app
+    /// starts or stops consuming the virtual camera. The app listens so it can
+    /// turn the real webcam on *only* while something is actually watching
+    /// (engage-on-demand) instead of forcing a manual "Start camera".
+    enum ConsumerSignal {
+        static let active = "com.adrbn.LiveLoop.consumerActive"
+        static let inactive = "com.adrbn.LiveLoop.consumerInactive"
+
+        /// Posted by the extension on the 0↔︎1 consumer transition.
+        static func post(active isActive: Bool) {
+            let name = CFNotificationName(rawValue: (isActive ? active : inactive) as CFString)
+            CFNotificationCenterPostNotification(
+                CFNotificationCenterGetDarwinNotifyCenter(), name, nil, nil, true)
+        }
+    }
+
     /// The shared defaults suite, or `.standard` if the App Group is unavailable
     /// (e.g. entitlement not provisioned) so the app still runs.
     static var sharedDefaults: UserDefaults {

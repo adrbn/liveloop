@@ -13,7 +13,7 @@ struct SettingsView: View {
     @EnvironmentObject private var app: AppState
     var body: some View {
         SettingsTabs(app: app, settings: app.settings)
-            .frame(width: 440)
+            .frame(width: 480, height: 380)
     }
 }
 
@@ -146,7 +146,7 @@ private struct SettingsTabs: View {
                 extensionStatusText
                 HStack {
                     Button(app.extensionInstalled ? "Reinstall" : "Install") { app.installExtension() }
-                    Button("Remove", role: .destructive) { app.extensionManager.uninstall() }
+                    Button("Remove", role: .destructive) { app.removeExtension() }
                         .disabled(!app.extensionInstalled)
                     Spacer()
                     Button("Refresh") { app.refreshExtensionStatus() }
