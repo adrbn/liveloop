@@ -1,8 +1,8 @@
 # LiveLoop — Design
 
-A native macOS clone of [CamLoop](https://camloop.app), with every paid feature
-free and open source. This document captures the architecture and the reasoning
-behind the non-obvious choices.
+A free and open-source native macOS alternative to [CamLoop](https://camloop.app),
+with every paid feature included. This document captures the architecture and the
+reasoning behind the non-obvious choices.
 
 ## Goal
 

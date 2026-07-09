@@ -39,8 +39,8 @@ camera, and one shortcut swaps your live feed for a seamless loop and back.
   like a flaky connection rather than a frozen app.
 - 🪞 **Live preview** — see exactly what viewers see, with a self-view of your real
   camera in the corner while the loop plays.
-- 🗂️ **Unlimited clips** — record, import, export, rename (inline), pin, ⌫ to delete.
-  No length caps.
+- 🗂️ **Unlimited clips** — record, import, export, rename (inline), pin, ↑↓ to
+  browse, ⌫ to delete. No length caps.
 - 🔒 **Private** — clips never leave your Mac. No account, no network, no telemetry.
 
 ### How it compares
@@ -55,7 +55,7 @@ subscription:
 | Clip length | 10 s | Unlimited | **Unlimited** |
 | Global hotkeys | — | ✅ | **✅** |
 | Simulated lag | — | ✅ | **✅** |
-| Seamless ping-pong + crossfade | — | ✅ | **✅** |
+| Seamless ping-pong + crossfade | ✅ | ✅ | **✅** |
 | Import / export clips | — | ✅ | **✅** |
 | Pin clips | — | ✅ | **✅** |
 | Custom camera name | — | ✅ | **✅** |
@@ -122,7 +122,7 @@ Design notes live in [`docs/DESIGN.md`](docs/DESIGN.md).
 
 ## Build from source
 
-Requirements: macOS 14+, Xcode 16+, [XcodeGen](https://github.com/yonsm/XcodeGen)
+Requirements: macOS 14+, Xcode 16+, [XcodeGen](https://github.com/yonaskolb/XcodeGen)
 + [create-dmg](https://github.com/create-dmg/create-dmg) (`brew install xcodegen create-dmg`).
 
 > [!NOTE]
@@ -149,8 +149,11 @@ then:
 ./scripts/release.sh   # archive → Developer ID export → notarize → staple → DMG
 ```
 
-**Quick dev build** (for iterating locally; needs `csrutil disable` +
-`systemextensionsctl developer on`): `./scripts/build.sh`.
+> [!IMPORTANT]
+> The camera extension must be **signed and notarized** to load on modern macOS
+> (14+), so the notarized path above is the only reliable way to produce a working
+> build — unsigned or dev-signed local builds of a camera *system* extension don't
+> load reliably on recent releases, even with SIP disabled.
 
 The app icon is generated from code: `python3 scripts/make_icon.py <out-dir>`.
 
@@ -170,19 +173,21 @@ LiveLoop/                 Menu-bar app
   Settings/ UI/ Shared/   Preferences, SwiftUI views, image pipeline
 LiveLoopExtension/        CMIO camera system extension (source + sink relay)
 Tests/LiveLoopTests/      Loop-engine + library unit tests
-scripts/                  build.sh · make_dmg.sh · make_icon.py
+scripts/                  release.sh · make_dmg.sh · make_icon.py · build.sh
 ```
 
 ---
 
 ## Roadmap
 
+- [x] **Notarized Developer ID release** — signed & notarized DMG that installs on
+  any Mac with SIP on. ✅ Shipped in v1.0.0.
 - [ ] **AI frame morphing** — optical-flow / learned interpolation (RIFE/FILM in
   Core ML) for a perfectly seamless single-direction loop. Today’s ping-pong +
   crossfade already reads as seamless for the low-motion clips this is built for.
 - [ ] Per-clip loop settings (speed, lag profile).
 - [ ] Auto-frame alignment to your current pose before looping.
-- [ ] Notarized Developer ID release + Sparkle auto-updates.
+- [ ] In-app auto-updates (Sparkle).
 
 ---
 
