@@ -10,8 +10,7 @@ Loop a short clip of yourself through a virtual camera so you look present on an
 video call while you grab a coffee, rest your eyes, or answer the door — your
 audio keeps passing straight through.
 
-A free, open-source, native macOS take on the CamLoop idea, with every "Pro"
-feature unlocked.
+A free and open-source native macOS alternative to CamLoop.
 
 ![macOS](https://img.shields.io/badge/macOS-14%2B-black?logo=apple)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange?logo=swift)
@@ -44,7 +43,10 @@ camera, and one shortcut swaps your live feed for a seamless loop and back.
   No length caps.
 - 🔒 **Private** — clips never leave your Mac. No account, no network, no telemetry.
 
-### Every CamLoop “Pro” feature, free
+### How it compares
+
+Everything's included and free — including the things others put behind a
+subscription:
 
 | Feature | CamLoop Free | CamLoop Pro | **LiveLoop** |
 | --- | :---: | :---: | :---: |
@@ -192,4 +194,4 @@ source of.
 
 ## License
 
-[MIT](LICENSE) © 2026 Adrien Bianca. Not affiliated with CamLoop.
+[MIT](LICENSE) © 2026 adrbn. Not affiliated with CamLoop.
