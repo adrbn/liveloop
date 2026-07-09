@@ -22,8 +22,9 @@ enum LiveLoop {
 
     /// App Group used for the shared `UserDefaults` suite (settings such as the
     /// virtual-camera display name). Both targets declare this in their
-    /// entitlements.
-    static let appGroupID = "group.com.adrbn.LiveLoop"
+    /// entitlements. Team-prefixed so it also prefixes the extension's CMIO Mach
+    /// service name (a CMIO requirement).
+    static let appGroupID = "2TWQF4T93E.com.adrbn.LiveLoop"
 
     /// Default display name of the virtual camera as seen by Zoom, Meet, etc.
     static let defaultCameraName = "LiveLoop"

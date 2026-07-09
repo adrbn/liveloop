@@ -21,10 +21,12 @@
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSUIElement</key>
-	<true/>
+	<false/>
 	<key>NSCameraUsageDescription</key>
 	<string>LiveLoop records short clips from your webcam and streams them (or your live feed) through its virtual camera.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>LiveLoop does not use your microphone; audio always passes straight through to your meeting app.</string>
+	<key>NSSystemExtensionUsageDescription</key>
+	<string>LiveLoop installs a virtual camera extension so Zoom, Meet, Teams and other apps can use your looped clip.</string>
 </dict>
 </plist>

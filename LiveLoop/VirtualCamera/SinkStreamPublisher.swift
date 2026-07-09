@@ -179,36 +179,13 @@ final class SinkStreamPublisher {
             return nil
         }
 
-        // The sink is the stream the host writes *into* the device. CMIO reports
-        // that as direction == 1 (a normal camera source stream is 0). Fall back
-        // to the last stream, since the extension always adds the source first
-        // and the sink second.
-        for stream in streams {
-            if let direction = uint32Property(object: stream, selector: Int(kCMIOStreamPropertyDirection)),
-               direction == 1 {
-                return stream
-            }
-        }
+        // The extension adds the source stream first and the sink second, and
+        // CMIO preserves that order — so the sink is the last stream. (The
+        // `kCMIOStreamPropertyDirection` value is not a reliable discriminator
+        // here in practice.)
         return streams.last
     }
 
-    private static func uint32Property(object: CMIOObjectID, selector: Int) -> UInt32? {
-        var address = CMIOObjectPropertyAddress(
-            mSelector: CMIOObjectPropertySelector(selector),
-            mScope: CMIOObjectPropertyScope(kCMIOObjectPropertyScopeGlobal),
-            mElement: CMIOObjectPropertyElement(kCMIOObjectPropertyElementMain))
-        var dataSize: UInt32 = 0
-        guard CMIOObjectGetPropertyDataSize(object, &address, 0, nil, &dataSize) == noErr,
-              dataSize == UInt32(MemoryLayout<UInt32>.size) else {
-            return nil
-        }
-        var value: UInt32 = 0
-        var dataUsed: UInt32 = 0
-        guard CMIOObjectGetPropertyData(object, &address, 0, nil, dataSize, &dataUsed, &value) == noErr else {
-            return nil
-        }
-        return value
-    }
 
     private static func stringProperty(object: CMIOObjectID, selector: Int) -> String? {
         var address = CMIOObjectPropertyAddress(

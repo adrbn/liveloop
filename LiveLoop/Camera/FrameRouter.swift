@@ -28,6 +28,10 @@ final class FrameRouter {
     /// Notified on the main queue whenever the effective mode changes.
     var onModeChange: ((Mode) -> Void)?
 
+    /// Called (on the processing queue) with every frame emitted to the virtual
+    /// camera — used to drive the in-app "what viewers see" preview.
+    var onOutputFrame: ((CVPixelBuffer) -> Void)?
+
     private let pipeline: ImagePipeline
     private let publisher: SinkStreamPublisher
     private let queue: DispatchQueue
@@ -90,13 +94,19 @@ final class FrameRouter {
 
     // MARK: - Frame handlers (on the processing queue)
 
+    /// Sends a frame to the virtual camera and mirrors it to the preview.
+    private func emit(_ buffer: CVPixelBuffer) {
+        publisher.send(buffer)
+        onOutputFrame?(buffer)
+    }
+
     func handleLiveFrame(_ sampleBuffer: CMSampleBuffer) {
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         let scaled = pipeline.scaledToOutput(pixelBuffer)
         latestLiveOutput = scaled
         // Only the live path emits when we're steady-state live.
         if mode == .live, !transitionActive, let scaled {
-            publisher.send(scaled)
+            emit(scaled)
         }
     }
 
@@ -110,10 +120,10 @@ final class FrameRouter {
             } else {
                 output = latestLiveOutput.map { pipeline.blend(from: loopBuffer, to: $0, t: t) } ?? loopBuffer
             }
-            if let output { publisher.send(output) }
+            if let output { emit(output) }
             if transitionProgress >= 1.0 { finishTransition() }
         } else if mode == .loop {
-            publisher.send(loopBuffer)
+            emit(loopBuffer)
         }
     }
 

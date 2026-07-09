@@ -38,7 +38,10 @@ camera, and one shortcut swaps your live feed for a seamless loop and back.
   meeting window.
 - 📶 **Simulated lag** — optional, never-repeating micro-freezes so the loop reads
   like a flaky connection rather than a frozen app.
-- 🗂️ **Unlimited clips** — record, import, export, rename, pin. No length caps.
+- 🪞 **Live preview** — see exactly what viewers see, with a self-view of your real
+  camera in the corner while the loop plays.
+- 🗂️ **Unlimited clips** — record, import, export, rename (inline), pin, ⌫ to delete.
+  No length caps.
 - 🔒 **Private** — clips never leave your Mac. No account, no network, no telemetry.
 
 ### Every CamLoop “Pro” feature, free
@@ -60,42 +63,24 @@ camera, and one shortcut swaps your live feed for a seamless loop and back.
 
 ## Install
 
-Grab `LiveLoop-x.y.z.dmg` from [Releases](../../releases), open it, and drag
-**LiveLoop** to Applications.
+The release build is **signed with a Developer ID and notarized by Apple**, so it
+installs and activates on any Mac with System Integrity Protection **on** — no
+developer account, no disabling SIP, nothing to configure.
 
-> [!IMPORTANT]
-> **A camera *system extension* requires a paid Apple Developer account to run.**
-> This is an Apple platform rule, not a limitation of this code. Activating the
-> extension needs the `com.apple.developer.system-extension.install` entitlement,
-> and **free / personal Apple teams cannot provision the System Extension
-> capability** — Xcode returns *“Personal development teams … do not support the
-> System Extension capability.”* Without a paid team's provisioning profile,
-> `sysextensiond` rejects the extension (*“Extension not found in App bundle”*)
-> **even with SIP disabled and developer mode on.** There is no free path.
+1. Download **`LiveLoop-x.y.z.dmg`** from [Releases](../../releases).
+2. Open it and drag **LiveLoop** to Applications.
+3. Launch LiveLoop → click the **Set up LiveLoop** banner → **Install Camera**.
+4. Approve the extension once in **System Settings ▸ General ▸ Login Items &
+   Extensions ▸ Camera Extensions** (macOS asks with Touch ID).
+5. In any meeting app, pick **LiveLoop** as your camera. **Click the preview** to
+   start, **Record** a clip, then **Switch to Loop** (or press `⌥⌘L`) and step away.
 
-### For distribution (recommended, works on any Mac)
+> [!TIP]
+> Chromium browsers (Chrome, Brave) cache the camera list when they launch — if
+> LiveLoop doesn't appear, **fully quit** the browser (`⌘Q`) and reopen it once.
 
-Sign with a **Developer ID Application** certificate and **notarize** the app. It
-then installs and activates with System Integrity Protection **on**, like any
-other app — nothing for the end user to disable. See
-[Signing & notarization](#signing--notarization).
-
-### For local development (paid team)
-
-With a **paid** team you can run a development-signed build by turning on
-system-extension developer mode (this step does require SIP off):
-
-```
-csrutil disable                          # once, from Recovery
-sudo systemextensionsctl developer on    # then reboot
-```
-
-Then open LiveLoop → **Set up LiveLoop** → **Install Camera**, and approve it in
-**System Settings ▸ General ▸ Login Items & Extensions ▸ Camera Extensions**.
-
-Once the camera is installed: open your meeting app, choose **LiveLoop** as the
-camera, click **Start Camera** in the menu bar, and use the shortcut
-(default `⌥⌘L`) to step away.
+Your audio is never touched: LiveLoop provides a camera only, so your real
+microphone reaches the meeting untouched.
 
 ---
 
@@ -137,41 +122,37 @@ Design notes live in [`docs/DESIGN.md`](docs/DESIGN.md).
 
 ## Build from source
 
-Requirements: macOS 14+, Xcode 16+, and [XcodeGen](https://github.com/yonsm/XcodeGen)
+Requirements: macOS 14+, Xcode 16+, [XcodeGen](https://github.com/yonsm/XcodeGen)
 + [create-dmg](https://github.com/create-dmg/create-dmg) (`brew install xcodegen create-dmg`).
+
+> [!NOTE]
+> A **paid Apple Developer Program** membership is required to *build* a working
+> build, because a camera **system extension** needs the System Extension
+> capability, which free/personal Apple teams cannot provision. (Downloading the
+> notarized DMG from Releases needs nothing — that's only for building yourself.)
 
 ```bash
 git clone https://github.com/adrbn/liveloop.git
 cd liveloop
+xcodegen generate     # project.yml is the source of truth
 
-# Generate the Xcode project (project.yml is the source of truth)
-xcodegen generate
-
-# Build + sign with your Apple team, then package a DMG
-LIVELOOP_SIGN_ID="Apple Development: you@example.com (XXXXXXXXXX)" ./scripts/build.sh
-./scripts/make_dmg.sh          # -> dist/LiveLoop-x.y.z.dmg
-
-# Run the tests
+# Run the tests (no signing needed)
 xcodebuild -scheme LiveLoop -configuration Debug test -only-testing:LiveLoopTests
 ```
 
-`scripts/build.sh` auto-detects your certificate’s team and stamps the extension’s
-Mach service name accordingly, so you only need to point `LIVELOOP_SIGN_ID` at one
-of your identities (`security find-identity -p codesigning -v` lists them).
+**Notarized release** (installs on any Mac, SIP on) — set your team in
+`project.yml` / `ExportOptions.plist`, store notarization credentials once
+(`xcrun notarytool store-credentials "LiveLoop" --apple-id you@example.com --team-id XXXXXXXXXX`),
+then:
+
+```bash
+./scripts/release.sh   # archive → Developer ID export → notarize → staple → DMG
+```
+
+**Quick dev build** (for iterating locally; needs `csrutil disable` +
+`systemextensionsctl developer on`): `./scripts/build.sh`.
 
 The app icon is generated from code: `python3 scripts/make_icon.py <out-dir>`.
-
-### Signing & notarization
-
-For a build that runs on other people’s Macs (SIP on):
-
-1. A paid **Apple Developer Program** membership.
-2. Enable the **System Extension** capability on the `com.adrbn.LiveLoop` App ID.
-3. Sign with **Developer ID Application** and staple a notarization ticket:
-   ```bash
-   xcrun notarytool submit dist/LiveLoop-x.y.z.dmg --keychain-profile "AC" --wait
-   xcrun stapler staple dist/LiveLoop-x.y.z.dmg
-   ```
 
 ---
 

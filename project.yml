@@ -30,12 +30,16 @@ targets:
     info:
       path: LiveLoop/Info.plist
       properties:
-        LSUIElement: true
+        # Not LSUIElement: a pure background app cannot present the camera TCC
+        # prompt (macOS auto-denies). We hide the Dock icon at runtime after
+        # first-run permission is granted instead (see AppState).
+        LSUIElement: false
         CFBundleDisplayName: LiveLoop
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSCameraUsageDescription: "LiveLoop records short clips from your webcam and streams them (or your live feed) through its virtual camera."
         NSMicrophoneUsageDescription: "LiveLoop does not use your microphone; audio always passes straight through to your meeting app."
+        NSSystemExtensionUsageDescription: "LiveLoop installs a virtual camera extension so Zoom, Meet, Teams and other apps can use your looped clip."
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.adrbn.LiveLoop
@@ -60,7 +64,9 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.adrbn.LiveLoop.Extension
-        PRODUCT_NAME: LiveLoopExtension
+        # CRITICAL: a CMIO system extension is only found by OSSystemExtensionManager
+        # when its executable/bundle name equals its bundle identifier.
+        PRODUCT_NAME: com.adrbn.LiveLoop.Extension
         CODE_SIGN_ENTITLEMENTS: LiveLoopExtension/LiveLoopExtension.entitlements
         ENABLE_APP_SANDBOX: YES
         INFOPLIST_FILE: LiveLoopExtension/Info.plist

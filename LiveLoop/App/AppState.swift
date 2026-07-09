@@ -9,7 +9,9 @@
 
 import Foundation
 import Combine
+import AppKit
 import AVFoundation
+import CoreMedia
 import CoreVideo
 
 struct CameraOption: Identifiable, Hashable {
@@ -35,6 +37,11 @@ final class AppState: ObservableObject {
     @Published var selectedClipID: UUID?
     @Published private(set) var loadingClip = false
 
+    /// Mirror of what the virtual camera is broadcasting (for the in-app preview).
+    let preview = PreviewRenderer()
+    /// Mirror of the real webcam — a self-view, useful while looping.
+    let livePreview = PreviewRenderer()
+
     // Engine.
     private let processingQueue = DispatchQueue(label: "com.adrbn.LiveLoop.processing", qos: .userInteractive)
     private let pipeline = ImagePipeline()
@@ -45,6 +52,7 @@ final class AppState: ObservableObject {
     private let recorder: ClipRecorder
     private let hotkeys = HotkeyManager()
     private var cancellables = Set<AnyCancellable>()
+    private var keyMonitor: Any?
 
     var isLoopActive: Bool { mode == .loop }
 
@@ -57,10 +65,20 @@ final class AppState: ObservableObject {
         router.loopEngine = loopEngine
         router.onModeChange = { [weak self] mode in self?.mode = mode }
 
-        // Fan every captured frame out to the router and (when active) recorder.
+        // Mirror every emitted frame into the in-app preview.
+        let preview = self.preview
+        router.onOutputFrame = { buffer in
+            DispatchQueue.main.async { preview.enqueue(buffer) }
+        }
+
+        // Fan every captured frame out to the router, recorder, and self-view.
+        let livePreview = self.livePreview
         camera.onSampleBuffer = { [router, recorder] sampleBuffer in
             router.handleLiveFrame(sampleBuffer)
             recorder.append(sampleBuffer)
+            if let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) {
+                DispatchQueue.main.async { livePreview.enqueue(pixelBuffer) }
+            }
         }
 
         applyLagSettings()
@@ -71,6 +89,23 @@ final class AppState: ObservableObject {
 
         selectedClipID = library.clips.first?.id
         refreshExtensionStatus()
+        installClipKeyMonitor()
+    }
+
+    /// Delete the selected clip on Backspace / Forward-delete — but never while a
+    /// text field (e.g. inline rename) is being edited.
+    private func installClipKeyMonitor() {
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self, event.keyCode == 51 || event.keyCode == 117 else { return event }
+            if let responder = NSApp.keyWindow?.firstResponder,
+               responder is NSText || responder is NSTextView {
+                return event
+            }
+            guard let clip = self.currentClip else { return event }
+            self.library.delete(clip)
+            self.selectedClipID = self.library.clips.first?.id
+            return nil
+        }
     }
 
     // MARK: - Extension status
@@ -225,9 +260,20 @@ final class AppState: ObservableObject {
 
     private func requestCameraAccess() async -> Bool {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
-        case .authorized: return true
-        case .notDetermined: return await AVCaptureDevice.requestAccess(for: .video)
-        default: return false
+        case .authorized:
+            return true
+        case .notDetermined:
+            // A menu-bar-only (accessory) app can't reliably present the TCC
+            // prompt. Become a regular foreground app, let the activation land,
+            // then request so the prompt appears on top.
+            NSApp.setActivationPolicy(.regular)
+            NSApp.activate(ignoringOtherApps: true)
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            let granted = await AVCaptureDevice.requestAccess(for: .video)
+            NSApp.setActivationPolicy(.accessory)
+            return granted
+        default:
+            return false
         }
     }
 
