@@ -63,24 +63,22 @@ camera, and one shortcut swaps your live feed for a seamless loop and back.
 
 ## Install
 
-The release build is **signed with a Developer ID and notarized by Apple**, so it
-installs and activates on any Mac with System Integrity Protection **on** — no
-developer account, no disabling SIP, nothing to configure.
+1. Download **`LiveLoop.dmg`** from [Releases](../../releases).
+2. Open it and drag **LiveLoop** to your Applications folder.
+3. Launch LiveLoop → click **Set up LiveLoop** → **Install Camera**, and allow it
+   when macOS asks (Touch ID). *(If it doesn't prompt, enable **LiveLoop** in
+   System Settings ▸ General ▸ Login Items & Extensions ▸ Camera Extensions.)*
+4. In Zoom, Meet, Teams, FaceTime or OBS, choose **LiveLoop** as your camera.
+5. **Click the preview** to start, **Record** a short clip, then **Switch to Loop**
+   (or press `⌥⌘L`) and step away.
 
-1. Download **`LiveLoop-x.y.z.dmg`** from [Releases](../../releases).
-2. Open it and drag **LiveLoop** to Applications.
-3. Launch LiveLoop → click the **Set up LiveLoop** banner → **Install Camera**.
-4. Approve the extension once in **System Settings ▸ General ▸ Login Items &
-   Extensions ▸ Camera Extensions** (macOS asks with Touch ID).
-5. In any meeting app, pick **LiveLoop** as your camera. **Click the preview** to
-   start, **Record** a clip, then **Switch to Loop** (or press `⌥⌘L`) and step away.
+Notarized by Apple, so it installs like any other trusted Mac app. Your microphone
+is never touched — LiveLoop only provides a camera, so your audio always passes
+straight through.
 
 > [!TIP]
-> Chromium browsers (Chrome, Brave) cache the camera list when they launch — if
-> LiveLoop doesn't appear, **fully quit** the browser (`⌘Q`) and reopen it once.
-
-Your audio is never touched: LiveLoop provides a camera only, so your real
-microphone reaches the meeting untouched.
+> Using Chrome or Brave? Fully quit it (`⌘Q`) and reopen it once after installing,
+> or LiveLoop won't show up in the camera picker (browsers cache the list at launch).
 
 ---
 
