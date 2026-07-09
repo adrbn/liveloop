@@ -19,3 +19,6 @@ xcuserdata/
 .build/
 .swiftpm/
 build_auto/
+
+# Local-only experiments (never pushed)
+beta-features/
