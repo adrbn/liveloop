@@ -18,3 +18,4 @@ xcuserdata/
 # Swift Package Manager
 .build/
 .swiftpm/
+build_auto/

@@ -26,5 +26,7 @@
 	</dict>
 	<key>OSBundleUsageDescription</key>
 	<string>Provides the LiveLoop virtual camera.</string>
+	<key>NSSystemExtensionUsageDescription</key>
+	<string>Provides the LiveLoop virtual camera used by Zoom, Meet, Teams and other apps.</string>
 </dict>
 </plist>
