@@ -20,17 +20,20 @@ final class ExtensionManager: NSObject, ObservableObject {
         case installing
         case needsApproval
         case installed
+        case removed
         case failed(String)
 
         var isBusy: Bool { self == .installing }
     }
 
     @Published private(set) var status: Status = .unknown
+    private var isRemoving = false
 
     /// Request activation of the LiveLoop camera extension. macOS shows a
     /// System Settings approval prompt the first time.
     func install() {
         logger.info("Requesting activation of \(LiveLoop.extensionBundleID, privacy: .public)")
+        isRemoving = false
         status = .installing
         let request = OSSystemExtensionRequest.activationRequest(
             forExtensionWithIdentifier: LiveLoop.extensionBundleID, queue: .main)
@@ -41,6 +44,7 @@ final class ExtensionManager: NSObject, ObservableObject {
     /// Request removal of the extension.
     func uninstall() {
         logger.info("Requesting deactivation of \(LiveLoop.extensionBundleID, privacy: .public)")
+        isRemoving = true
         status = .installing
         let request = OSSystemExtensionRequest.deactivationRequest(
             forExtensionWithIdentifier: LiveLoop.extensionBundleID, queue: .main)
@@ -70,19 +74,21 @@ extension ExtensionManager: OSSystemExtensionRequestDelegate {
         Task { @MainActor in
             switch result {
             case .completed:
-                self.status = .installed
-                logger.info("Extension request completed.")
+                self.status = self.isRemoving ? .removed : .installed
+                logger.info("Extension request completed (removing: \(self.isRemoving, privacy: .public)).")
             case .willCompleteAfterReboot:
                 self.status = .needsApproval
                 logger.info("Extension will complete after reboot.")
             @unknown default:
-                self.status = .installed
+                self.status = self.isRemoving ? .removed : .installed
             }
+            self.isRemoving = false
         }
     }
 
     nonisolated func request(_ request: OSSystemExtensionRequest, didFailWithError error: Error) {
         Task { @MainActor in
+            self.isRemoving = false
             self.status = .failed(error.localizedDescription)
             logger.error("Extension request failed: \(error.localizedDescription, privacy: .public)")
         }

@@ -101,10 +101,30 @@ struct OnboardingView: View {
     }
 
     private var statusView: some View {
-        Label(app.extensionInstalled ? "Virtual camera ready" : "Not installed yet",
-              systemImage: app.extensionInstalled ? "checkmark.circle.fill" : "circle.dashed")
+        let s = onboardingStatus
+        return Label(s.text, systemImage: s.icon)
             .font(.subheadline)
-            .foregroundStyle(app.extensionInstalled ? .green : .secondary)
+            .foregroundStyle(s.color)
+    }
+
+    /// Always reports a clear state so a click never ends in silence.
+    private var onboardingStatus: (text: String, icon: String, color: Color) {
+        switch app.extensionManager.status {
+        case .installing:
+            return ("Installing…", "arrow.triangle.2.circlepath", .secondary)
+        case .needsApproval:
+            return ("Waiting for approval in System Settings — enable LiveLoop below", "exclamationmark.circle.fill", .orange)
+        case .failed(let message):
+            return ("Couldn’t install — \(message)", "xmark.octagon.fill", .red)
+        case .installed:
+            return ("Virtual camera ready ✓", "checkmark.circle.fill", .green)
+        case .removed:
+            return ("Virtual camera removed", "circle.dashed", .secondary)
+        case .unknown:
+            return app.extensionInstalled
+                ? ("Virtual camera ready ✓", "checkmark.circle.fill", .green)
+                : ("Not installed yet", "circle.dashed", .secondary)
+        }
     }
 
     private var isSelfSignedNote: Bool {
