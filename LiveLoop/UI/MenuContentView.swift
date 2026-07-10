@@ -48,9 +48,11 @@ struct MenuContentView: View {
         .animation(reduceMotion ? nil : .spring(response: 0.34, dampingFraction: 0.9), value: app.extensionInstalled)
         .background(WindowAccessor { app.panelWindow = $0 })
         .onAppear {
+            app.setPreviewsActive(true)
             app.refreshExtensionStatus()
             app.refreshCameras()
         }
+        .onDisappear { app.setPreviewsActive(false) }
     }
 
     // MARK: - Header

@@ -17,12 +17,28 @@ final class PreviewRenderer {
 
     let layer = AVSampleBufferDisplayLayer()
 
+    /// Only fed while the panel is actually on screen. A display layer whose view
+    /// isn't in a visible window never renders — so it never drains — and
+    /// enqueuing into it anyway grows its queue without bound (raw 1080p frames
+    /// at 30 fps → memory → swap → a full disk). Off by default: no panel, no feed.
+    private(set) var isActive = false
+
     init() {
         layer.videoGravity = .resizeAspectFill
     }
 
+    /// Turn the preview on/off as the panel appears/disappears. Flushing on the
+    /// way out frees whatever the layer was still holding.
+    func setActive(_ active: Bool) {
+        isActive = active
+        if !active { layer.flushAndRemoveImage() }
+    }
+
     /// Enqueue one output frame for immediate display. Call on the main thread.
     func enqueue(_ pixelBuffer: CVPixelBuffer) {
+        // Never stuff a layer that isn't visible or isn't draining.
+        guard isActive, layer.isReadyForMoreMediaData else { return }
+
         var formatDescription: CMFormatDescription?
         CMVideoFormatDescriptionCreateForImageBuffer(allocator: kCFAllocatorDefault,
                                                      imageBuffer: pixelBuffer,
