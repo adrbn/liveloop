@@ -482,6 +482,11 @@ struct MenuContentView: View {
 private struct ClipRow: View {
     static let height: CGFloat = 44
 
+    /// Compact, locale-aware "10 Jul 04:52" for the discreet clip timestamp.
+    static func timestamp(_ date: Date) -> String {
+        date.formatted(.dateTime.day().month(.abbreviated).hour().minute())
+    }
+
     let clip: Clip
     let url: URL
     let isSelected: Bool
@@ -506,8 +511,12 @@ private struct ClipRow: View {
                     Text(clip.name).font(.subheadline).lineLimit(1)
                         .onTapGesture(count: 2, perform: startEditing)
                 }
-                Text(String(format: "%.1fs", clip.durationSeconds))
-                    .font(.caption2).foregroundStyle(.secondary)
+                HStack(spacing: 5) {
+                    Text(String(format: "%.1fs", clip.durationSeconds))
+                        .font(.caption2).foregroundStyle(.secondary)
+                    Text(Self.timestamp(clip.createdAt))
+                        .font(.system(size: 9)).foregroundStyle(.tertiary)
+                }
             }
             Spacer(minLength: 2)
             if !isEditing {
