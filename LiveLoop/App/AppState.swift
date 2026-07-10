@@ -132,6 +132,34 @@ final class AppState: ObservableObject {
         }
         installClipKeyMonitor()
         observeConsumerSignals()
+        observeAppTermination()
+        Self.purgeStaleRecordings()
+    }
+
+    /// Feed the in-app previews only while the panel is on screen. A hidden
+    /// display layer never drains, so feeding it piles up raw frames without
+    /// bound (memory → swap → full disk). See `PreviewRenderer`.
+    func setPreviewsActive(_ active: Bool) {
+        preview.setActive(active)
+        livePreview.setActive(active)
+    }
+
+    /// Stop the camera cleanly when the app quits (don't leave capture running).
+    private func observeAppTermination() {
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.disengage() }
+        }
+    }
+
+    /// Delete orphaned recording temp files a previous crash may have left behind.
+    nonisolated static func purgeStaleRecordings() {
+        let tmp = FileManager.default.temporaryDirectory
+        let files = (try? FileManager.default.contentsOfDirectory(at: tmp, includingPropertiesForKeys: nil)) ?? []
+        for file in files where file.lastPathComponent.hasPrefix("liveloop-") && file.pathExtension == "mov" {
+            try? FileManager.default.removeItem(at: file)
+        }
     }
 
     /// Keyboard shortcuts inside the open panel: ↑/↓ move between clips,
