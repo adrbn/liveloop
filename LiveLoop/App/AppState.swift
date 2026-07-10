@@ -472,9 +472,11 @@ final class AppState: ObservableObject {
         recordSecondsLeft = 0
         guard let url else { return }
         let name = "Clip \(library.clips.count + 1)"
-        if let clip = library.add(movingFileAt: url, name: name, duration: duration) {
-            selectClip(clip)
-        }
+        guard let clip = library.add(movingFileAt: url, name: name, duration: duration) else { return }
+        // A new recording must never hijack the current selection or the running
+        // loop (you can record a clip while looping another). Only auto-select
+        // when nothing is selected yet — the first-ever recording.
+        if selectedClipID == nil { selectClip(clip) }
     }
 
     // MARK: - Extension
