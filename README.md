@@ -82,6 +82,10 @@ straight through.
 > Using Chrome or Brave? Fully quit it (`⌘Q`) and reopen it once after installing,
 > or LiveLoop won't show up in the camera picker (browsers cache the list at launch).
 
+> [!NOTE]
+> **WhatsApp Desktop** doesn't pick up the virtual camera yet — it's a known
+> limitation I'm looking into. Zoom, Meet, Teams, Slack, FaceTime and OBS all work.
+
 ---
 
 ## How it works
