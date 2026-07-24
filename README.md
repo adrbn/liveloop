@@ -17,6 +17,10 @@ A free and open-source native macOS alternative to CamLoop.
 ![SwiftUI](https://img.shields.io/badge/UI-SwiftUI-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
+<br/>
+
+<img src="docs/assets/demo.gif" width="640" alt="LiveLoop — swap your live camera for a seamless loop, then step away" />
+
 </div>
 
 ---
