@@ -45,6 +45,16 @@ final class FrameRouter {
     private var transitionProgress = 0.0
     private let transitionIncrement: Double
 
+    // Beta (smart switch): a return to live waiting for the loop to line up with you.
+    private var pendingLiveStep: Int?
+    private var pendingLiveTicks = 0
+    /// Look up to ~1.5 s ahead for a matching loop frame…
+    private static let smartHorizonSteps = 45
+    /// …but never keep someone waiting more than 2 s (freezes stall the step).
+    private static let smartMaxWaitTicks = 60
+    /// Start the crossfade slightly early so it's centred on the best match.
+    private static let smartLeadSteps = 5
+
     init(pipeline: ImagePipeline, publisher: SinkStreamPublisher, queue: DispatchQueue) {
         self.pipeline = pipeline
         self.publisher = publisher
@@ -60,32 +70,47 @@ final class FrameRouter {
     func engageLive() {
         queue.async {
             self.transitionActive = false
+            self.pendingLiveStep = nil
             self.setMode(.live)
         }
     }
 
-    func goToLoop() {
+    /// `smart` (beta) starts the loop on the frame that best matches you now.
+    func goToLoop(smart: Bool = false) {
         queue.async {
             guard self.loopEngine?.isLoaded == true else { return }
-            self.loopEngine?.start()
+            self.loopEngine?.start(atFrame: smart ? self.smartStartFrame() : nil)
             self.transitionActive = true
             self.transitionToLoop = true
             self.transitionProgress = 0
         }
     }
 
-    func goToLive() {
+    /// `smart` (beta) waits up to 2 s for the loop to line up with you first.
+    /// `togglesPendingReturn`: a toggle pressed again during that wait cancels
+    /// it and stays on the loop.
+    func goToLive(smart: Bool = false, togglesPendingReturn: Bool = false) {
         queue.async {
             guard self.mode == .loop || (self.transitionActive && self.transitionToLoop) else { return }
-            self.transitionActive = true
-            self.transitionToLoop = false
-            self.transitionProgress = 0
+            if self.pendingLiveStep != nil {
+                if togglesPendingReturn { self.pendingLiveStep = nil }
+                return
+            }
+            if smart, self.mode == .loop, !self.transitionActive {
+                if let step = self.smartReturnStep() {
+                    self.pendingLiveStep = step
+                    self.pendingLiveTicks = 0
+                    return
+                }
+            }
+            self.beginTransitionToLive()
         }
     }
 
     func disengage() {
         queue.async {
             self.transitionActive = false
+            self.pendingLiveStep = nil
             self.loopEngine?.stop()
             self.latestLiveOutput = nil
             self.setMode(.idle)
@@ -111,6 +136,11 @@ final class FrameRouter {
     }
 
     private func handleLoopFrame(_ loopBuffer: CVPixelBuffer) {
+        if let step = pendingLiveStep {
+            pendingLiveTicks += 1
+            let linedUp = (loopEngine?.currentStep ?? step) >= step
+            if linedUp || pendingLiveTicks >= Self.smartMaxWaitTicks { beginTransitionToLive() }
+        }
         if transitionActive {
             transitionProgress = min(transitionProgress + transitionIncrement, 1.0)
             let t = CGFloat(transitionProgress)
@@ -128,6 +158,27 @@ final class FrameRouter {
     }
 
     // MARK: - Private
+
+    private func beginTransitionToLive() {
+        pendingLiveStep = nil
+        transitionActive = true
+        transitionToLoop = false
+        transitionProgress = 0
+    }
+
+    private func smartStartFrame() -> Int? {
+        guard let live = latestLiveOutput else { return nil }
+        return loopEngine?.bestStartFrame(matching: pipeline.signature(of: live))
+    }
+
+    /// The step to begin the crossfade at, or nil to go right away.
+    private func smartReturnStep() -> Int? {
+        guard let live = latestLiveOutput, let engine = loopEngine else { return nil }
+        let best = engine.bestUpcomingStep(matching: pipeline.signature(of: live),
+                                           horizon: Self.smartHorizonSteps)
+        let start = best - Self.smartLeadSteps
+        return start > engine.currentStep ? start : nil
+    }
 
     private func finishTransition() {
         transitionActive = false

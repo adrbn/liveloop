@@ -12,7 +12,7 @@ import Carbon.HIToolbox
 struct SettingsView: View {
     @EnvironmentObject private var app: AppState
     var body: some View {
-        SettingsTabs(app: app, settings: app.settings)
+        SettingsTabs(app: app, settings: app.settings, beta: app.beta)
             .frame(width: 480, height: 380)
     }
 }
@@ -20,6 +20,7 @@ struct SettingsView: View {
 private struct SettingsTabs: View {
     @ObservedObject var app: AppState
     @ObservedObject var settings: Settings
+    @ObservedObject var beta: BetaSettings
 
     var body: some View {
         TabView {
@@ -27,6 +28,9 @@ private struct SettingsTabs: View {
             loop.tabItem { Label("Loop", systemImage: "repeat") }
             shortcut.tabItem { Label("Shortcut", systemImage: "keyboard") }
             camera.tabItem { Label("Virtual Camera", systemImage: "video") }
+            BetaSettingsView(settings: app.beta, controller: app.betaController,
+                             clipNames: app.library.clips.map(\.name))
+                .tabItem { Label("Beta", systemImage: "flask") }
         }
         .padding(20)
     }
@@ -64,23 +68,41 @@ private struct SettingsTabs: View {
     private var loop: some View {
         Form {
             Section {
-                Toggle("Simulated lag", isOn: $settings.lagEnabled)
+                Toggle("Simulated lag", isOn: $settings.lagEnabled.animation())
                 if settings.lagEnabled {
-                    LabeledContent("Intensity") {
-                        VStack(alignment: .leading) {
-                            Slider(value: $settings.lagIntensity, in: 0.1...1.0)
-                            Text(intensityLabel).font(.caption).foregroundStyle(.secondary)
+                    Picker("Style", selection: $beta.connectionProfile.animation()) {
+                        Text("Stutter").tag(ConnectionProfile.off)
+                        Section("Beta") {
+                            ForEach(ConnectionProfile.allCases.filter { $0 != .off }) { profile in
+                                Text(profile.displayName).tag(profile)
+                            }
                         }
+                    }
+                    if beta.connectionProfile == .off {
+                        LabeledContent("Intensity") {
+                            VStack(alignment: .leading) {
+                                Slider(value: $settings.lagIntensity, in: 0.1...1.0)
+                                Text(intensityLabel).font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                    } else {
+                        Text(beta.connectionProfile.summary)
+                            .font(.caption).foregroundStyle(.secondary)
                     }
                 }
             } header: {
                 Text("Lifelike loop")
             } footer: {
-                Text("Adds subtle, never-repeating freezes and micro-stutters so the loop reads like a flaky connection rather than a frozen app. The loop itself plays forward-then-backward so it never cuts.")
-                    .font(.caption).foregroundStyle(.secondary)
+                Text(lagFooter).font(.caption).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
+    }
+
+    private var lagFooter: String {
+        let base = "Adds subtle, never-repeating freezes and micro-stutters so the loop reads like a flaky connection rather than a frozen app. The loop itself plays forward-then-backward so it never cuts."
+        guard settings.lagEnabled, beta.connectionProfile != .off else { return base }
+        return base + " Beta styles also go blocky now and then. A new style applies the next time the loop starts."
     }
 
     private var intensityLabel: String {

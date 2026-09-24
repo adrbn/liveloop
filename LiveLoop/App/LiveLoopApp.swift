@@ -20,7 +20,7 @@ struct LiveLoopApp: App {
             MenuContentView()
                 .environmentObject(appState)
         } label: {
-            Label("LiveLoop", systemImage: menuBarSymbol)
+            MenuBarLabel(symbol: menuBarSymbol, loopTimer: appState.betaController.loopTimer)
         }
         .menuBarExtraStyle(.window)
 

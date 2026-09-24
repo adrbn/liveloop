@@ -35,6 +35,8 @@ final class AppState: ObservableObject {
     let settings = Settings()
     let library = ClipLibrary()
     let extensionManager = ExtensionManager()
+    /// Opt-in beta features (Settings ▸ Beta). All off by default.
+    let beta = BetaSettings()
 
     // Observable UI state.
     @Published private(set) var isEngaged = false
@@ -60,9 +62,13 @@ final class AppState: ObservableObject {
     private let router: FrameRouter
     private let recorder: ClipRecorder
     private let hotkeys = HotkeyManager()
+    private let liveFrameTap = LiveFrameTap()
+    private(set) lazy var betaController = BetaController(
+        host: self, settings: beta, modes: $mode.eraseToAnyPublisher(), liveFrameTap: liveFrameTap)
     private var cancellables = Set<AnyCancellable>()
     private var keyMonitor: Any?
     private var loadedClipID: UUID?
+    private var loadedClipHasSignatures = false
     /// Set once the OS confirms activation — trusted over CMIO device discovery,
     /// which can lag inside a long-running process.
     private var osConfirmedInstalled = false
@@ -104,11 +110,12 @@ final class AppState: ObservableObject {
 
         // Fan every captured frame out to the router, recorder, and self-view.
         let livePreview = self.livePreview
-        camera.onSampleBuffer = { [router, recorder] sampleBuffer in
+        camera.onSampleBuffer = { [router, recorder, liveFrameTap] sampleBuffer in
             router.handleLiveFrame(sampleBuffer)
             recorder.append(sampleBuffer)
             if let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) {
                 DispatchQueue.main.async { livePreview.enqueue(pixelBuffer) }
+                liveFrameTap.offer(pixelBuffer)   // no-op unless a beta feature listens
             }
         }
 
@@ -134,6 +141,7 @@ final class AppState: ObservableObject {
         observeConsumerSignals()
         observeAppTermination()
         Self.purgeStaleRecordings()
+        _ = betaController
     }
 
     /// Feed the in-app previews only while the panel is on screen. A hidden
@@ -395,7 +403,7 @@ final class AppState: ObservableObject {
         Task {
             if !isEngaged { await engage() }
             if mode == .loop {
-                router.goToLive()
+                router.goToLive(smart: beta.smartSwitchEnabled, togglesPendingReturn: true)
             } else {
                 await goToLoop()
             }
@@ -406,16 +414,18 @@ final class AppState: ObservableObject {
         guard let clip = currentClip ?? library.clips.first else { return }
         // Ensure the *currently selected* clip is what's loaded (arrow-navigating
         // changes the selection without eagerly decoding each clip's frames).
-        if !loopEngine.isLoaded || loadedClipID != clip.id {
+        // Beta smart switch also needs the clip's pose signatures.
+        let needsSignatures = beta.smartSwitchEnabled && !loadedClipHasSignatures
+        if !loopEngine.isLoaded || loadedClipID != clip.id || needsSignatures {
             await loadClip(clip)
         }
         guard loopEngine.isLoaded else { return }
         applyLagSettings()
-        router.goToLoop()
+        router.goToLoop(smart: beta.smartSwitchEnabled)
     }
 
     func goToLive() {
-        router.goToLive()
+        router.goToLive(smart: beta.smartSwitchEnabled)
     }
 
     // MARK: - Clips
@@ -434,9 +444,11 @@ final class AppState: ObservableObject {
         loadingClip = true
         defer { loadingClip = false }
         let url = library.url(for: clip)
-        if let store = await ClipFrameLoader.load(url: url, pipeline: pipeline) {
+        if let store = await ClipFrameLoader.load(url: url, pipeline: pipeline,
+                                                  withSignatures: beta.smartSwitchEnabled) {
             loopEngine.load(store)
             loadedClipID = clip.id
+            loadedClipHasSignatures = !store.signatures.isEmpty
         }
     }
 
@@ -528,6 +540,7 @@ final class AppState: ObservableObject {
     private func applyLagSettings() {
         loopEngine.lagEnabled = settings.lagEnabled
         loopEngine.lagIntensity = settings.lagIntensity
+        loopEngine.connectionProfile = beta.connectionProfile
     }
 
     private func registerHotkey() {

@@ -86,6 +86,65 @@ final class ImagePipeline {
                                            options: [kCGImageDestinationLossyCompressionQuality as CIImageRepresentationOption: quality])
     }
 
+    // MARK: - Beta effects
+
+    /// Beta (connection profiles): re-renders an output buffer as if it came
+    /// through a starved video codec — soft when mildly degraded, blocky when
+    /// badly degraded. `quality` is `1` (untouched) down towards `0`.
+    func degraded(_ buffer: CVPixelBuffer, quality: Double) -> CVPixelBuffer? {
+        guard quality < 0.999 else { return buffer }
+        let q = min(max(quality, 0.01), 1)
+        let scale = CGFloat(max(1.0 / 20, q * q))
+        let source = CIImage(cvPixelBuffer: buffer)
+        let small = source.applyingFilter("CILanczosScaleTransform", parameters: [
+            kCIInputScaleKey: scale,
+            kCIInputAspectRatioKey: 1,
+        ])
+        guard small.extent.width > 0, small.extent.height > 0 else { return buffer }
+        let clamped = small.clampedToExtent()
+        let upscaleSource = q < 0.35 ? clamped.samplingNearest() : clamped
+        let restored = upscaleSource
+            .transformed(by: CGAffineTransform(scaleX: source.extent.width / small.extent.width,
+                                               y: source.extent.height / small.extent.height))
+            .cropped(to: source.extent)
+        guard let output = dequeue() else { return nil }
+        context.render(restored, to: output)
+        return output
+    }
+
+    /// Beta (smart switch): a tiny grayscale thumbnail of the frame, cropped
+    /// the same way as the output, used to compare poses.
+    func signature(of buffer: CVPixelBuffer) -> [UInt8] {
+        let width = PoseMatcher.signatureWidth
+        let height = PoseMatcher.signatureHeight
+        let image = CIImage(cvPixelBuffer: buffer)
+        let extent = image.extent
+        guard extent.width > 0, extent.height > 0 else { return [] }
+
+        let scale = max(CGFloat(width) / extent.width, CGFloat(height) / extent.height)
+        let small = image.applyingFilter("CILanczosScaleTransform", parameters: [
+            kCIInputScaleKey: scale,
+            kCIInputAspectRatioKey: 1,
+        ])
+        let dx = (small.extent.width - CGFloat(width)) / 2
+        let dy = (small.extent.height - CGFloat(height)) / 2
+        let luma = small
+            .transformed(by: CGAffineTransform(translationX: -small.extent.minX - dx,
+                                               y: -small.extent.minY - dy))
+            .applyingFilter("CIColorMatrix", parameters: [
+                "inputRVector": CIVector(x: 0.2126, y: 0.7152, z: 0.0722, w: 0),
+            ])
+
+        var pixels = [UInt8](repeating: 0, count: width * height)
+        pixels.withUnsafeMutableBytes { raw in
+            guard let base = raw.baseAddress else { return }
+            context.render(luma, toBitmap: base, rowBytes: width,
+                           bounds: CGRect(x: 0, y: 0, width: width, height: height),
+                           format: .R8, colorSpace: nil)
+        }
+        return pixels
+    }
+
     // MARK: - Private
 
     /// Renders a CIImage into a fresh output buffer using aspect-fill geometry.

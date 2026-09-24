@@ -18,14 +18,29 @@
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.adrbn.LiveLoop.automation</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>liveloop</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSUIElement</key>
 	<false/>
+	<key>NSAudioCaptureUsageDescription</key>
+	<string>Only for the beta Name alert: LiveLoop listens to your meeting's audio for your name while you're on the loop. It's transcribed on your Mac and never recorded or sent anywhere.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>LiveLoop records short clips from your webcam and streams them (or your live feed) through its virtual camera.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>LiveLoop does not use your microphone; audio always passes straight through to your meeting app.</string>
+	<string>Your meeting app keeps its own audio; LiveLoop only uses the microphone for the beta Name alert, when you pick Microphone as its source. Speech is transcribed on your Mac and never recorded or sent anywhere.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Only for the beta Name alert: LiveLoop listens for your name while you're on the loop. Speech is transcribed on your Mac and never recorded or sent anywhere.</string>
 	<key>NSSystemExtensionUsageDescription</key>
 	<string>LiveLoop installs a virtual camera extension so Zoom, Meet, Teams and other apps can use your looped clip.</string>
 </dict>
