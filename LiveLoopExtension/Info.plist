@@ -18,9 +18,8 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>CMIOExtension</key>
 	<dict>
-		<!-- Must be <TeamID>.<bundle id>. scripts/build.sh overwrites this with
-		     the detected signing-team OU before signing; this default matches the
-		     personal team's certificate OU. -->
+		<!-- Must start with the app group both targets share
+		     (2TWQF4T93E.com.adrbn.LiveLoop), or the extension fails to start. -->
 		<key>CMIOExtensionMachServiceName</key>
 		<string>2TWQF4T93E.com.adrbn.LiveLoop.Extension</string>
 	</dict>

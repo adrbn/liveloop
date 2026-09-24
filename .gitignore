@@ -20,5 +20,8 @@ xcuserdata/
 .swiftpm/
 build_auto/
 
+# Python bytecode (scripts/make_icon.py)
+__pycache__/
+
 # Local-only experiments (never pushed)
 beta-features/
