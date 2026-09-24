@@ -58,8 +58,8 @@ final class NameMatcherTests: XCTestCase {
         XCTAssertEqual(NameMatcher(rawTriggers: "Alex, \(long)").triggers, ["alex"])
     }
 
-    // Real partial results from the on-device recognizer (macOS, en-US):
-    // "The Alexandria office…" was briefly guessed as "The alex".
+    // Partial results from the on-device recognizer revise their last word as
+    // more audio arrives, e.g. "The alex" before "The Alexandria office".
 
     func testTheWordStillBeingSpokenIsNotSettled() {
         let matcher = NameMatcher(rawTriggers: "Alex")
