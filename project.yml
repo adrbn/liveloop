@@ -12,11 +12,9 @@ settings:
     CODE_SIGN_STYLE: Manual
     CODE_SIGN_IDENTITY: "Apple Development"
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "1.1.1"
-    CURRENT_PROJECT_VERSION: "2"
+    MARKETING_VERSION: "1.2.0"
+    CURRENT_PROJECT_VERSION: "4"
     ENABLE_HARDENED_RUNTIME: YES
-    # Team identifier prefix is injected at sign time; kept here for reference.
-    INFOPLIST_KEY_LSUIElement: YES
 
 targets:
   # ---------------------------------------------------------------------------
@@ -38,8 +36,14 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSCameraUsageDescription: "LiveLoop records short clips from your webcam and streams them (or your live feed) through its virtual camera."
-        NSMicrophoneUsageDescription: "LiveLoop does not use your microphone; audio always passes straight through to your meeting app."
+        NSMicrophoneUsageDescription: "Your meeting app keeps its own audio; LiveLoop only uses the microphone for the beta Name alert, when you pick Microphone as its source. Speech is transcribed on your Mac and never recorded or sent anywhere."
         NSSystemExtensionUsageDescription: "LiveLoop installs a virtual camera extension so Zoom, Meet, Teams and other apps can use your looped clip."
+        # Beta features (all opt-in, off by default).
+        NSSpeechRecognitionUsageDescription: "Only for the beta Name alert: LiveLoop listens for your name while you're on the loop. Speech is transcribed on your Mac and never recorded or sent anywhere."
+        NSAudioCaptureUsageDescription: "Only for the beta Name alert: LiveLoop listens to your meeting's audio for your name while you're on the loop. It's transcribed on your Mac and never recorded or sent anywhere."
+        CFBundleURLTypes:
+          - CFBundleURLName: com.adrbn.LiveLoop.automation
+            CFBundleURLSchemes: [liveloop]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.adrbn.LiveLoop
@@ -88,6 +92,8 @@ targets:
       - path: LiveLoop/Library/Clip.swift
       - path: LiveLoop/Library/ClipLibrary.swift
       - path: LiveLoop/Shared/SharedConstants.swift
+      # Beta features: only their pure logic is compiled into the tests.
+      - path: LiveLoop/Beta/Core
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.adrbn.LiveLoopTests
