@@ -1,210 +1,208 @@
-<div align="center">
+<p align="center">
+  <img src="docs/assets/icon.png" width="128" height="128" alt="LiveLoop" />
+</p>
 
-<img src="docs/assets/icon.png" width="128" height="128" alt="LiveLoop icon" />
+<h1 align="center">LiveLoop</h1>
 
-# LiveLoop
+<p align="center">
+  <b>Step away, stay on camera.</b><br>
+  Loop a few seconds of yourself on any video call while you grab a coffee —<br>
+  one shortcut out, one shortcut back. Free, open source, native to macOS.
+</p>
 
-**Step away, stay on camera.**
+<p align="center">
+  <a href="https://github.com/adrbn/liveloop/releases/latest"><img src="docs/assets/buttons/download.svg" height="64" alt="Download for macOS — free, macOS 14 Sonoma or later"></a>
+  &nbsp;
+  <a href="https://ko-fi.com/adrbn"><img src="docs/assets/buttons/kofi.svg" height="64" alt="Buy me a coffee on Ko-fi"></a>
+  &nbsp;
+  <a href="https://github.com/adrbn/liveloop/issues/new"><img src="docs/assets/buttons/feedback.svg" height="64" alt="Suggest a feature or report a bug"></a>
+</p>
 
-Loop a short clip of yourself through a virtual camera so you look present on any
-video call while you grab a coffee, rest your eyes, or answer the door — your
-audio keeps passing straight through.
+<p align="center">
+  <a href="https://github.com/adrbn/liveloop/releases/latest"><img src="https://img.shields.io/github/v/release/adrbn/liveloop?style=for-the-badge&label=version&color=A64DFF&labelColor=1e1e2e&logo=github&logoColor=white" alt="Latest version"></a>
+  <img src="https://img.shields.io/badge/macOS-14%2B-3896FF?style=for-the-badge&logo=apple&logoColor=white&labelColor=1e1e2e" alt="macOS 14 Sonoma or later">
+  <img src="https://img.shields.io/badge/notarized-by%20Apple-2ea44f?style=for-the-badge&labelColor=1e1e2e" alt="Notarized by Apple">
+  <img src="https://img.shields.io/badge/100%25%20offline-no%20account-14b8a6?style=for-the-badge&labelColor=1e1e2e" alt="Works 100% offline, no account">
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-f59e0b?style=for-the-badge&labelColor=1e1e2e" alt="License: GPL-3.0"></a>
+</p>
 
-A free and open-source native macOS alternative to CamLoop.
+<p align="center">
+  <img src="docs/assets/demo.webp" width="800" alt="How LiveLoop works: record a few seconds of yourself from the menu bar, pick LiveLoop as your camera in the meeting app, press ⌥⌘L and step away while the call sees a seamless loop of you, then press ⌥⌘L again to go live." />
+  <br>
+  <sub>Demo reconstructed: the webcam footage is AI-generated (Google Veo); the other participants are stock footage from Pexels.</sub>
+</p>
 
-![macOS](https://img.shields.io/badge/macOS-14%2B-black?logo=apple)
-![Swift](https://img.shields.io/badge/Swift-5.9-orange?logo=swift)
-![SwiftUI](https://img.shields.io/badge/UI-SwiftUI-blue)
-![License](https://img.shields.io/badge/license-GPL--3.0-green)
-
-<br/>
-
-<img src="docs/assets/demo.gif" width="640" alt="LiveLoop — swap your live camera for a seamless loop, then step away" />
-
-</div>
-
----
-
-## What it does
-
-LiveLoop lives in your menu bar and registers a **virtual camera** that Zoom,
-Google Meet, Microsoft Teams, Slack, FaceTime, OBS — anything with a camera
-picker — can select. Record a few seconds of yourself, pick **LiveLoop** as your
-camera, and one shortcut swaps your live feed for a seamless loop and back.
-
-- 🎥 **Virtual camera** — appears as “LiveLoop” in every app’s camera menu.
-- 🔊 **Audio always passes through** — LiveLoop only touches video, so you can
-  keep talking or mute as normal. Nothing to configure.
-- 🔁 **Seamless loop** — plays forward-then-backward (ping-pong) with a crossfade,
-  so there is no visible cut.
-- ⌨️ **Global shortcut** — flip live ⇄ loop system-wide without leaving your
-  meeting window.
-- 📶 **Simulated lag** — optional, never-repeating micro-freezes so the loop reads
-  like a flaky connection rather than a frozen app.
-- 🪞 **Live preview** — see exactly what viewers see, with a self-view of your real
-  camera in the corner while the loop plays.
-- 🗂️ **Unlimited clips** — record, import, export, rename (inline), pin, ↑↓ to
-  browse, ⌫ to delete. No length caps.
-- 🔒 **Private** — clips never leave your Mac. No account, no network, no telemetry.
-
-### How it compares
-
-Everything's included and free — including the things others put behind a
-subscription:
-
-| Feature | CamLoop Free | CamLoop Pro | **LiveLoop** |
-| --- | :---: | :---: | :---: |
-| Virtual camera + audio passthrough | ✅ | ✅ | ✅ |
-| Saved clips | 1 | Unlimited | **Unlimited** |
-| Clip length | 10 s | Unlimited | **Unlimited** |
-| Global hotkeys | — | ✅ | **✅** |
-| Simulated lag | — | ✅ | **✅** |
-| Seamless ping-pong + crossfade | ✅ | ✅ | **✅** |
-| Import / export clips | — | ✅ | **✅** |
-| Pin clips | — | ✅ | **✅** |
-| Custom camera name | — | ✅ | **✅** |
-| Price | Free | $4.99/mo · $49 | **Free & open source** |
+<p align="center">
+  <a href="#get-started">Get started</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#beta-features">Beta</a> ·
+  <a href="#compared-to-camloop">Compared to CamLoop</a> ·
+  <a href="#faq">FAQ</a> ·
+  <a href="#support-liveloop">Support</a>
+</p>
 
 ---
 
-## Install
+## Why LiveLoop
 
-1. Download **`LiveLoop.dmg`** from [Releases](../../releases).
-2. Open it and drag **LiveLoop** to your Applications folder.
-3. Launch LiveLoop → click **Set up LiveLoop** → **Install Camera**, and allow it
-   when macOS asks (Touch ID). *(If it doesn't prompt, enable **LiveLoop** in
-   System Settings ▸ General ▸ Login Items & Extensions ▸ Camera Extensions.)*
-4. In Zoom, Meet, Teams, FaceTime or OBS, choose **LiveLoop** as your camera.
-5. **Click the preview** to start, **Record** a short clip, then **Switch to Loop**
-   (or press `⌥⌘L`) and step away.
+- 🔁 **It looks like you, not a frozen frame.** The clip plays forward then backward, so it never jumps, and a short crossfade hides the switch. Turn on *simulated lag* and the odd stutter makes it read like a shaky connection instead.
+- ⌨️ **One shortcut, from inside your meeting.** `⌥⌘L` works system-wide, so you never have to leave the call window to step away or come back.
+- 🔊 **Your audio is untouched.** LiveLoop only provides a camera; your meeting app keeps your mic, so you can still talk, mute and unmute as usual.
+- 🎥 **Works where your camera works.** Zoom, Google Meet, Microsoft Teams, Slack, FaceTime, OBS: anything with a camera picker.
+- 🔒 **Nothing leaves your Mac.** No account, no network access, no telemetry. Your real webcam switches on when a call starts using LiveLoop, and off again when it ends.
+- 💸 **Free, with no paid tier.** Unlimited clips, custom shortcut, simulated lag, import and export. No trial, no subscription, and the code is open source (GPL-3.0).
 
-Notarized by Apple, so it installs like any other trusted Mac app. Your microphone
-is never touched — LiveLoop only provides a camera, so your audio always passes
-straight through.
+## Get started
+
+1. **[Download LiveLoop](https://github.com/adrbn/liveloop/releases/latest)**, open the `.dmg` and drag LiveLoop to Applications.
+2. **Launch it** → **Set up LiveLoop** → **Install Camera**, and approve when macOS asks.
+3. **Pick "LiveLoop" as your camera** in Zoom, Meet, Teams, FaceTime…
+4. **Record** a few seconds of yourself looking at the screen.
+5. Press **`⌥⌘L`** (or click **Switch to Loop**) and step away. Press it again when you're back.
 
 > [!TIP]
-> Using Chrome or Brave? Fully quit it (`⌘Q`) and reopen it once after installing,
-> or LiveLoop won't show up in the camera picker (browsers cache the list at launch).
+> **Record like you're listening.** 5–10 seconds, looking at the screen, small natural movements (a nod, a blink) and no big gestures. A calm clip loops invisibly.
 
 > [!NOTE]
-> **WhatsApp Desktop** doesn't pick up the virtual camera yet — it's a known
-> limitation I'm looking into. Zoom, Meet, Teams, Slack, FaceTime and OBS all work.
+> **Meeting in Chrome or Brave?** Quit the browser completely (`⌘Q`) and reopen it once after installing. Browsers only read the camera list at launch.
 
----
+## Features
 
-## How it works
+| Feature | What it does |
+| --- | --- |
+| **Seamless loop** | Forward-then-backward playback with a crossfade on every switch. No visible cut |
+| **Simulated lag** | Irregular micro-freezes that never repeat, with an adjustable intensity |
+| **Global shortcut** | `⌥⌘L` by default; pick another combination in Settings if it clashes |
+| **Live preview** | Shows exactly what others see, plus a small view of your real camera while the loop plays |
+| **Clip library** | Unlimited clips. Record 1–30 s or import any `.mov` / `.mp4`. Rename, pin, export |
+| **Keyboard-friendly** | `↑` `↓` to switch clips, `⌫` to delete, `⌘Z` to undo |
+| **Your camera name** | Rename the virtual camera to whatever you want it to show up as in the camera menu |
+| **Menu-bar app** | Lives next to the clock: no Dock icon, no window in your way |
 
-LiveLoop is two pieces that talk over Core Media I/O:
+## Beta features
 
-```mermaid
-flowchart LR
-    subgraph App["LiveLoop.app · menu bar"]
-        CAM[Webcam capture] --> ROUTER{Frame router<br/>live / loop}
-        CLIP[Clip library] --> LOOP[Loop engine<br/>ping-pong · crossfade · lag]
-        LOOP --> ROUTER
-        ROUTER --> PUB[Sink publisher]
-    end
-    subgraph Ext["LiveLoopExtension · camera system extension"]
-        SINK[Sink stream] --> RELAY[relay] --> SRC[Source stream]
-    end
-    PUB -->|CMSampleBuffers| SINK
-    SRC -->|virtual camera| ZOOM[Zoom · Meet · Teams · FaceTime · OBS]
-```
+New and still being polished. Each one is **off until you switch it on**, and all of them run on your Mac. They live in **Settings ▸ Beta**, except the connection styles, which are part of Simulated lag.
 
-- The **app** captures your webcam, records/loops clips, and decides — per frame —
-  whether to send the live feed or the loop. It pushes finished 1080p frames into
-  the extension’s **sink** stream.
-- The **extension** is a deliberately thin, always-stable relay: whatever arrives
-  on the sink it forwards to the **source** stream that meeting apps read. When
-  the app isn’t running it shows a friendly placeholder card.
-- The **loop** plays forward then backward so its ends meet, and a short crossfade
-  smooths the live ⇄ loop switch. **Simulated lag** is a seeded, deterministic
-  scheduler that occasionally holds a frame — irregular to the eye, reproducible
-  in tests.
-- **Audio** is never involved: LiveLoop provides a camera only, so your real
-  microphone reaches the meeting untouched.
+| Beta | What it does |
+| --- | --- |
+| **Smart switch** | Starts the loop on the frame that looks most like you right now, and waits up to 2 s for the loop to line up with you before going live. No jump either way |
+| **Auto away** | Nobody at the desk for a few seconds? It switches to the loop on its own, and goes live again when you sit back down. Face detection runs on-device |
+| **Name alert** | While you're on the loop, a chime and a notification when someone says your name. Listens to the meeting audio (works with headphones) or your mic. Speech is transcribed on your Mac only |
+| **Connection styles** | Three more styles for Simulated lag (**Settings ▸ Loop**): *Shaky Wi-Fi*, *4G on the go* or *Dropping out*, with realistic freezes and blocky patches instead of the plain stutter |
+| **Loop timer** | How long you've been away, right next to the menu-bar icon, plus an optional "Still away?" reminder |
+| **Automations** | Shortcuts actions and `liveloop://` links for Stream Deck, Raycast, Alfred or your own scripts |
 
-Design notes live in [`docs/DESIGN.md`](docs/DESIGN.md).
+<details>
+<summary><b>Automation links</b></summary>
 
----
+| Link | What it does |
+| --- | --- |
+| `liveloop://toggle` | Same as the shortcut |
+| `liveloop://loop` | Switch to the loop (turns the camera on if needed) |
+| `liveloop://live` | Back to live |
+| `liveloop://start` · `liveloop://stop` | Camera on · off |
+| `liveloop://clip?name=Coffee` | Select a clip by name |
 
-## Build from source
+Try it from Terminal with `open "liveloop://toggle"`. In the Shortcuts app, search for **LiveLoop**.
+</details>
 
-Requirements: macOS 14+, Xcode 16+, [XcodeGen](https://github.com/yonaskolb/XcodeGen)
-+ [create-dmg](https://github.com/create-dmg/create-dmg) (`brew install xcodegen create-dmg`).
+## Compared to CamLoop
 
-> [!NOTE]
-> A **paid Apple Developer Program** membership is required to *build* a working
-> build, because a camera **system extension** needs the System Extension
-> capability, which free/personal Apple teams cannot provision. (Downloading the
-> notarized DMG from Releases needs nothing — that's only for building yourself.)
+LiveLoop started as a free alternative to [CamLoop](https://camloop.app), a paid app that does the same thing. Here's the honest comparison:
+
+|  | CamLoop Free | CamLoop Pro | **LiveLoop** |
+| --- | :---: | :---: | :---: |
+| Virtual camera, audio untouched | ✅ | ✅ | ✅ |
+| Seamless ping-pong loop | ✅ | ✅ | ✅ |
+| Saved clips | 1 | Unlimited | **Unlimited** |
+| Clip length | 10 s | Unlimited | **Unlimited** |
+| Global, customizable shortcut | — | ✅ | ✅ |
+| Simulated lag | — | ✅ | ✅ |
+| Import / export, pin clips | — | ✅ | ✅ |
+| Custom camera name | — | ✅ | ✅ |
+| AI morph & pose alignment | — | ✅ | *pose alignment in beta* |
+| Live effects on the camera | — | ✅ | — |
+| Open source | — | — | ✅ |
+| **Price** | Free | $4.99/mo or $49 | **Free** |
+
+<sub>CamLoop features and prices from camloop.app, September 2026. LiveLoop is not affiliated with CamLoop.</sub>
+
+## FAQ
+
+<details>
+<summary><b>Which apps does it work with?</b></summary>
+
+Anything that lets you choose a camera: Zoom, Google Meet, Microsoft Teams, Slack, FaceTime, OBS, Photo Booth, and meetings in the browser (Chrome, Brave…).
+
+**Not yet:** WhatsApp Desktop doesn't list virtual cameras. I'm looking into it.
+</details>
+
+<details>
+<summary><b>LiveLoop doesn't show up in my camera list</b></summary>
+
+1. Quit the meeting app completely (`⌘Q`) and reopen it. Most apps only read the camera list at launch.
+2. Check that the camera is approved in **System Settings ▸ General ▸ Login Items & Extensions ▸ Camera Extensions**, and that **LiveLoop** is switched on there.
+3. Still nothing? [Open an issue](https://github.com/adrbn/liveloop/issues/new) with your macOS version and the app you're using.
+</details>
+
+<details>
+<summary><b>Why does macOS ask me to approve a "system extension"?</b></summary>
+
+That's how every virtual camera works on modern macOS; OBS's goes through the same approval. The extension does one thing: it passes along the frames the LiveLoop app sends it. It's signed and notarized by Apple, and you can remove it at any time (see below).
+</details>
+
+<details>
+<summary><b>Does LiveLoop record my audio or send anything anywhere?</b></summary>
+
+No. LiveLoop has no network code at all: no analytics, no update pings, no account. Your clips stay on your Mac and nowhere else.
+
+It never listens to audio either, unless you switch on the beta **Name alert**. Even then it only listens while you're on the loop, and speech recognition is forced to run on your Mac: nothing is recorded, and nothing is sent anywhere. The whole source is right here if you want to check.
+</details>
+
+<details>
+<summary><b>What do people see if LiveLoop isn't running?</b></summary>
+
+A plain card that reads **LiveLoop · Open the app to go live** instead of your face, so keep LiveLoop running during calls where you use it. Reopen it and start the camera to go live again.
+</details>
+
+<details>
+<summary><b>How do I uninstall it?</b></summary>
+
+LiveLoop ▸ Settings ▸ **Virtual Camera** ▸ **Remove**, then drag LiveLoop from Applications to the Trash.
+</details>
+
+## What's next
+
+- **AI frame morphing.** Learned frame interpolation for a perfect one-way loop. (Pose-matched switching is already in beta.)
+- **Per-clip settings** for speed and lag.
+- **In-app updates**, so you never have to download a new version by hand again.
+
+Have an idea or found a bug? [Open an issue](https://github.com/adrbn/liveloop/issues). Every report gets read.
+
+## Support LiveLoop
+
+LiveLoop is free and will stay free. If it covered for you on a coffee break, you can **[buy me a coffee on Ko-fi](https://ko-fi.com/adrbn)** ☕. A ⭐ on the repo helps other people find it too.
+
+<details>
+<summary><b>Build it from source</b></summary>
+
+Requires macOS 14+, Xcode 16+, [XcodeGen](https://github.com/yonaskolb/XcodeGen) and [create-dmg](https://github.com/create-dmg/create-dmg) (`brew install xcodegen create-dmg`).
 
 ```bash
-git clone https://github.com/adrbn/liveloop.git
-cd liveloop
-xcodegen generate     # project.yml is the source of truth
-
-# Run the tests (no signing needed)
-xcodebuild -scheme LiveLoop -configuration Debug test -only-testing:LiveLoopTests
+git clone https://github.com/adrbn/liveloop.git && cd liveloop
+xcodegen generate   # project.yml is the source of truth
+xcodebuild -scheme LiveLoop -configuration Debug test -only-testing:LiveLoopTests CODE_SIGNING_ALLOWED=NO
 ```
 
-**Notarized release** (installs on any Mac, SIP on) — set your team in
-`project.yml` / `ExportOptions.plist`, store notarization credentials once
-(`xcrun notarytool store-credentials "LiveLoop" --apple-id you@example.com --team-id XXXXXXXXXX`),
-then:
+The tests need no signing. A **working build** does: a camera system extension needs the System Extension capability, which only a **paid Apple Developer Program** team can provision, and it must be notarized to load on macOS 14+. Set your team in `project.yml` and `ExportOptions.plist`, sign in to Xcode ▸ Settings ▸ Accounts with it, store notarization credentials once with `xcrun notarytool store-credentials "LiveLoop"`, then:
 
 ```bash
-./scripts/release.sh   # archive → Developer ID export → notarize → staple → DMG
+./scripts/release.sh   # tests → archive → Developer ID export → notarize → staple → DMG
 ```
 
-> [!IMPORTANT]
-> The camera extension must be **signed and notarized** to load on modern macOS
-> (14+), so the notarized path above is the only reliable way to produce a working
-> build — unsigned or dev-signed local builds of a camera *system* extension don't
-> load reliably on recent releases, even with SIP disabled.
-
-The app icon is generated from code: `python3 scripts/make_icon.py <out-dir>`.
-
----
-
-## Project layout
-
-```
-LiveLoop/                 Menu-bar app
-  App/                    Entry point + AppState coordinator
-  Camera/                 AVCaptureSession + live/loop frame router
-  Loop/                   Ping-pong, lag scheduler, clip frame store, loop engine
-  Recording/              AVAssetWriter clip recorder
-  Library/                Clip model + library (CRUD, import/export, pin)
-  VirtualCamera/          System-extension lifecycle + CMIO sink publisher
-  Hotkeys/                Global hotkey (Carbon)
-  Settings/ UI/ Shared/   Preferences, SwiftUI views, image pipeline
-LiveLoopExtension/        CMIO camera system extension (source + sink relay)
-Tests/LiveLoopTests/      Loop-engine + library unit tests
-scripts/                  release.sh · make_dmg.sh · make_icon.py · build.sh
-```
-
----
-
-## Roadmap
-
-- [x] **Notarized Developer ID release** — signed & notarized DMG that installs on
-  any Mac with SIP on. ✅ Shipped in v1.0.0.
-- [ ] **AI frame morphing** — optical-flow / learned interpolation (RIFE/FILM in
-  Core ML) for a perfectly seamless single-direction loop. Today’s ping-pong +
-  crossfade already reads as seamless for the low-motion clips this is built for.
-- [ ] Per-clip loop settings (speed, lag profile).
-- [ ] Auto-frame alignment to your current pose before looping.
-- [ ] In-app auto-updates (Sparkle).
-
----
-
-## Why
-
-Because looking present while you refill your coffee shouldn’t cost $49, and
-because a virtual camera you run yourself should be something you can read the
-source of.
+How the app and the camera extension fit together, and why, is in [`docs/DESIGN.md`](docs/DESIGN.md).
+</details>
 
 ## License
 
-[GPL-3.0](LICENSE) © 2026 adrbn. Not affiliated with CamLoop.
+[GPL-3.0](LICENSE) © 2026 adrbn. LiveLoop is an independent project and is not affiliated with CamLoop.

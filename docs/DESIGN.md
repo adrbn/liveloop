@@ -16,7 +16,7 @@ macOS exposes software cameras through **Core Media I/O (CMIO) camera system
 extensions** — the only mechanism modern conferencing apps (which use library
 validation) will load. The legacy DAL plug-in path is blocked. So LiveLoop is:
 
-1. **`LiveLoop.app`** — a menu-bar app (`LSUIElement`) that owns all the logic:
+1. **`LiveLoop.app`** — a menu-bar app that owns all the logic:
    webcam capture, recording, the clip library, the loop engine, and the UI.
 2. **`LiveLoopExtension`** — a CMIO camera system extension: a thin, always-on
    relay that publishes the virtual-camera device.
@@ -93,13 +93,62 @@ Program membership:
   off). Lets you iterate on a non-notarized build.
 
 The code is identical either way; only the certificate/profile differs.
+`scripts/release.sh` takes the first path. Automatic signing refreshes the
+profiles through the Apple ID signed in to Xcode ▸ Settings ▸ Accounts, so the
+script checks for one before it starts.
+
+## Source layout
+
+```
+LiveLoop/                 Menu-bar app
+  App/                    Entry point + AppState coordinator
+  Camera/                 AVCaptureSession + live/loop frame router
+  Loop/                   Ping-pong, lag scheduler, clip frame store, loop engine
+  Recording/              AVAssetWriter clip recorder
+  Library/                Clip model + library (CRUD, import/export, pin)
+  VirtualCamera/          System-extension lifecycle + CMIO sink publisher
+  Hotkeys/                Global hotkey (Carbon)
+  Settings/ UI/ Shared/   Preferences, SwiftUI views, image pipeline
+  Beta/                   Opt-in beta features (Settings ▸ Beta), all off by default
+    Core/                 Their pure, unit-tested logic
+LiveLoopExtension/        CMIO camera system extension (source + sink relay)
+Tests/LiveLoopTests/      Loop-engine, library and beta-logic unit tests
+scripts/                  release.sh · make_dmg.sh · lib.sh · make_icon.py
+```
+
+The app icon is generated from code, on Apple's macOS icon grid (an 824 px tile
+on a 1024 px canvas). Regenerate the asset catalog and the README icons with:
+
+```bash
+python3 scripts/make_icon.py LiveLoop/Resources/Assets.xcassets/AppIcon.appiconset --docs docs/assets \
+  --tile LiveLoopExtension/PlaceholderIcon.png --tile-size 368
+```
+
+The tile (no margin, no shadow) is what the camera extension draws on its
+"Open the app to go live" card.
+
+## Beta features
+
+Everything under `LiveLoop/Beta/` is opt-in and must leave the default path
+untouched: with every toggle off, no camera frame is sampled, no audio is
+opened and no timer runs. Each feature drives the app only through the
+`BetaHost` protocol (the same actions as the hotkey).
+
+| Feature | Pure logic (`Beta/Core`) | Hooks into |
+| --- | --- | --- |
+| Smart switch | `PoseMatcher` (32×18 luma signatures, mean-subtracted distance) | `ClipFrameLoader` signatures, `LoopEngine.start(atFrame:)`, `FrameRouter` pending return |
+| Auto away | `PresenceDetector` (hysteresis) | `LiveFrameTap` → `FaceSampler` (Vision, ~2.5 fps) |
+| Connection styles | `ConnectionSimulator` (seeded, like `LagScheduler`); `LagEffects` runs it *instead of* the stutter, never both | `LoopEngine.start`/`tick`, `ImagePipeline.degraded` |
+| Loop timer | `LoopSessionClock` | Menu-bar label, local notifications |
+| Name alert | `NameMatcher`, `AlertCooldown` | `SFSpeechRecognizer` (on-device required), Core Audio process tap or mic |
+| Automations | `AutomationCommand` (`liveloop://` parser) | Apple Event URL handler, App Intents |
 
 ## Testing
 
 Pure logic is isolated so it can be tested headlessly (no app host):
-`PingPongSequencer`, `LagScheduler`, `SplitMix64`, and `ClipLibrary` CRUD are
-covered by `Tests/LiveLoopTests`. The CMIO pieces are validated manually with
-Photo Booth / QuickTime as the client.
+`PingPongSequencer`, `LagScheduler`, `SplitMix64`, `ClipLibrary` CRUD and the
+beta logic in `LiveLoop/Beta/Core` are covered by `Tests/LiveLoopTests`. The
+CMIO pieces are validated manually with Photo Booth / QuickTime as the client.
 
 ## Deliberately out of scope (v1)
 

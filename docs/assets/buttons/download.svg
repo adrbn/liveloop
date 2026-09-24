@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="64" viewBox="0 0 300 64" role="img" aria-label="Download for macOS">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3896FF"/>
+      <stop offset="1" stop-color="#A64DFF"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".22"/>
+      <stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="300" height="64" rx="16" fill="url(#bg)"/>
+  <rect width="300" height="64" rx="16" fill="url(#shine)"/>
+  <rect x=".5" y=".5" width="299" height="63" rx="15.5" fill="none" stroke="#fff" stroke-opacity=".25"/>
+  <g transform="translate(36 32)" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <circle r="13"/>
+    <path d="M0 -6.5V6M-5 1.5L0 6.5L5 1.5"/>
+  </g>
+  <g font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" fill="#fff">
+    <text x="64" y="30" font-size="19" font-weight="700" textLength="190" lengthAdjust="spacingAndGlyphs">Download for macOS</text>
+    <text x="64" y="48" font-size="12.5" font-weight="500" fill-opacity=".88" textLength="196" lengthAdjust="spacingAndGlyphs">Free · macOS 14 Sonoma or later</text>
+  </g>
+</svg>
