@@ -21,7 +21,6 @@
 <p align="center">
   <a href="https://github.com/adrbn/liveloop/releases/latest"><img src="https://img.shields.io/github/v/release/adrbn/liveloop?style=for-the-badge&label=version&color=A64DFF&labelColor=1e1e2e&logo=github&logoColor=white" alt="Latest version"></a>
   <img src="https://img.shields.io/badge/macOS-14%2B-3896FF?style=for-the-badge&logo=apple&logoColor=white&labelColor=1e1e2e" alt="macOS 14 Sonoma or later">
-  <img src="https://img.shields.io/badge/notarized-by%20Apple-2ea44f?style=for-the-badge&labelColor=1e1e2e" alt="Notarized by Apple">
   <img src="https://img.shields.io/badge/100%25%20offline-no%20account-14b8a6?style=for-the-badge&labelColor=1e1e2e" alt="Works 100% offline, no account">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-f59e0b?style=for-the-badge&labelColor=1e1e2e" alt="License: GPL-3.0"></a>
 </p>
