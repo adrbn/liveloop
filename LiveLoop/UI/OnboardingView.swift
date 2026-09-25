@@ -67,7 +67,7 @@ struct OnboardingView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             VStack(alignment: .leading) {
                 Text("Set up LiveLoop").font(.title2).bold()
-                Text("Step away, stay on camera.").foregroundStyle(.secondary)
+                Text("Loop yourself in.").foregroundStyle(.secondary)
             }
         }
     }

@@ -5,7 +5,7 @@
 <h1 align="center">LiveLoop</h1>
 
 <p align="center">
-  <b>Step away, stay on camera.</b><br>
+  <b>Loop yourself in.</b><br>
   Loop a few seconds of yourself on any video call while you grab a coffee —<br>
   one shortcut out, one shortcut back. Free, open source, native to macOS.
 </p>
@@ -35,7 +35,6 @@ https://github.com/user-attachments/assets/583b3575-69e7-41e3-a7d8-96de952423e8
   <a href="#get-started">Get started</a> ·
   <a href="#features">Features</a> ·
   <a href="#beta-features">Beta</a> ·
-  <a href="#compared-to-camloop">Compared to CamLoop</a> ·
   <a href="#faq">FAQ</a> ·
   <a href="#support-liveloop">Support</a>
 </p>
@@ -104,27 +103,6 @@ New and still being polished. Each one is **off until you switch it on**, and al
 
 Try it from Terminal with `open "liveloop://toggle"`. In the Shortcuts app, search for **LiveLoop**.
 </details>
-
-## Compared to CamLoop
-
-LiveLoop started as a free alternative to [CamLoop](https://camloop.app), a paid app that does the same thing. Here's the honest comparison:
-
-|  | CamLoop Free | CamLoop Pro | **LiveLoop** |
-| --- | :---: | :---: | :---: |
-| Virtual camera, audio untouched | ✅ | ✅ | ✅ |
-| Seamless ping-pong loop | ✅ | ✅ | ✅ |
-| Saved clips | 1 | Unlimited | **Unlimited** |
-| Clip length | 10 s | Unlimited | **Unlimited** |
-| Global, customizable shortcut | — | ✅ | ✅ |
-| Simulated lag | — | ✅ | ✅ |
-| Import / export, pin clips | — | ✅ | ✅ |
-| Custom camera name | — | ✅ | ✅ |
-| AI morph & pose alignment | — | ✅ | *pose alignment in beta* |
-| Live effects on the camera | — | ✅ | — |
-| Open source | — | — | ✅ |
-| **Price** | Free | $4.99/mo or $49 | **Free** |
-
-<sub>CamLoop features and prices from camloop.app, September 2026. LiveLoop is not affiliated with CamLoop.</sub>
 
 ## FAQ
 
@@ -204,4 +182,4 @@ How the app and the camera extension fit together, and why, is in [`docs/DESIGN.
 
 ## License
 
-[GPL-3.0](LICENSE) © 2026 adrbn. You can use, study, change and share LiveLoop, but anything you distribute that is built on it must stay open source under the same license. LiveLoop is an independent project and is not affiliated with CamLoop.
+[GPL-3.0](LICENSE) © 2026 adrbn. You can use, study, change and share LiveLoop, but anything you distribute that is built on it must stay open source under the same license.

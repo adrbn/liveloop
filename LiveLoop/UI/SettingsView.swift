@@ -2,8 +2,8 @@
 //  SettingsView.swift
 //  LiveLoop
 //
-//  Preferences window. Everything CamLoop gates behind Pro — hotkeys, simulated
-//  lag, custom camera name — is here and free.
+//  Preferences window: the shortcut, simulated lag, the camera name and the
+//  beta features.
 //
 
 import SwiftUI
