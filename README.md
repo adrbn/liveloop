@@ -205,4 +205,4 @@ How the app and the camera extension fit together, and why, is in [`docs/DESIGN.
 
 ## License
 
-[GPL-3.0](LICENSE) © 2026 adrbn. LiveLoop is an independent project and is not affiliated with CamLoop.
+[GPL-3.0](LICENSE) © 2026 adrbn. You can use, study, change and share LiveLoop, but anything you distribute that is built on it must stay open source under the same license. LiveLoop is an independent project and is not affiliated with CamLoop.
