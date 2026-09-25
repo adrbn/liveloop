@@ -25,7 +25,7 @@
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-f59e0b?style=for-the-badge&labelColor=1e1e2e" alt="License: GPL-3.0"></a>
 </p>
 
-https://github.com/user-attachments/assets/583b3575-69e7-41e3-a7d8-96de952423e8
+https://github.com/user-attachments/assets/19864b2c-d2bc-464b-b77c-de6243197d5d
 
 <p align="center">
   <sub>Demo reconstructed: the webcam footage is AI-generated (Google Veo); the other participants are stock footage from Pexels.</sub>
