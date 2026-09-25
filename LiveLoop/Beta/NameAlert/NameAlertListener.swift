@@ -126,7 +126,7 @@ final class NameAlertListener: @unchecked Sendable {
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.requiresOnDeviceRecognition = true
         request.shouldReportPartialResults = true
-        request.contextualStrings = matcher.triggers
+        request.contextualStrings = matcher.recognizerHints
         lock.withLock { self.request = request }
 
         task = recognizer.recognitionTask(with: request) { [weak self] result, error in

@@ -84,6 +84,53 @@ final class NameMatcherTests: XCTestCase {
         XCTAssertEqual(matcher.firstSettledMatch(in: "Thanks Mr Garcia for", isFinal: false), "mr garcia")
     }
 
+    // Names that are also everyday words ("Will", "Pierre", "Chiara"). Given the
+    // name as typed, Apple's recognizer writes "Will" for the name and keeps the
+    // word "will" in lowercase. A name ending what's been heard counts either way:
+    // the listener only acts on it once a pause follows.
+
+    func testKeepsTheTriggersAsTypedForTheRecognizer() {
+        XCTAssertEqual(NameMatcher(rawTriggers: " Will, will \n Hey  Alex ").recognizerHints, ["Will", "Hey Alex"])
+    }
+
+    func testACommonWordNameIsIgnoredInOrdinarySpeech() {
+        let matcher = NameMatcher(rawTriggers: "Will")
+        for transcript in [
+            "OK let's get started I will send the deck tomorrow will you share your screen",
+            "we will see next week that will be all for today",
+            "will it be ready by Friday I think it will work",
+            "Will you share your screen",
+            "OK, let's get started. Will it be ready by Friday?",
+        ] {
+            XCTAssertNil(matcher.firstSettledMatch(in: transcript, isFinal: true), transcript)
+            XCTAssertNil(matcher.firstSettledMatch(in: transcript, isFinal: false), transcript)
+        }
+        XCTAssertNil(matcher.firstSettledMatch(in: "I will send", isFinal: false))
+    }
+
+    func testACommonWordNameCountsWhenUsedAsAName() {
+        let matcher = NameMatcher(rawTriggers: "Will")
+        XCTAssertEqual(matcher.firstSettledMatch(in: "thanks Will what do you", isFinal: false), "will")
+        XCTAssertEqual(matcher.firstSettledMatch(in: "I'll ask Will to send it", isFinal: true), "will")
+        XCTAssertEqual(matcher.firstSettledMatch(in: "Will, can you share your screen", isFinal: false), "will")
+    }
+
+    func testACommonWordNameEndingWhatWasHeardCountsOnceSettled() {
+        // "What do you think, Will?" then silence: `firstMatch` sees it, the
+        // listener fires once the recognizer has left it alone for a second.
+        let matcher = NameMatcher(rawTriggers: "Will")
+        XCTAssertEqual(matcher.firstMatch(in: "what do you think will"), "will")
+        XCTAssertNil(matcher.firstSettledMatch(in: "what do you think will", isFinal: false))
+        XCTAssertNil(matcher.firstMatch(in: "I will send it"))
+    }
+
+    func testCommonWordNamesInOtherLanguages() {
+        XCTAssertNil(NameMatcher(rawTriggers: "Pierre").firstMatch(in: "c'est solide comme la pierre et ça tient"))
+        XCTAssertEqual(NameMatcher(rawTriggers: "Pierre").firstMatch(in: "merci Pierre on continue"), "pierre")
+        XCTAssertNil(NameMatcher(rawTriggers: "Chiara").firstMatch(in: "l'idea è chiara e sarà pronta"))
+        XCTAssertNil(NameMatcher(rawTriggers: "Sara").firstMatch(in: "sarà pronta domani mattina"))
+    }
+
     func testSuggestsAFirstNameFromTheAccountName() {
         XCTAssertEqual(NameMatcher.suggestedTrigger(fromFullName: "Alex Garcia"), "Alex")
         XCTAssertEqual(NameMatcher.suggestedTrigger(fromFullName: "  Marie-Claire Dupont "), "Marie-Claire")
