@@ -55,7 +55,7 @@ https://github.com/user-attachments/assets/1038b4cf-f2fe-4d04-b8ec-d606f18a1b70
 1. **[Download LiveLoop](https://github.com/adrbn/liveloop/releases/latest)**, open the `.dmg` and drag LiveLoop to Applications.
 2. **Launch it** → **Set up LiveLoop** → **Install Camera**, and approve when macOS asks.
 3. **Pick "LiveLoop" as your camera** in Zoom, Meet, Teams, FaceTime…
-4. **Record** a few seconds of yourself looking at the screen.
+4. Click **Record** in the menu-bar panel and film a few seconds of yourself looking at the screen. The camera doesn't need to be on.
 5. Press **`⌥⌘L`** (or click **Switch to Loop**) and step away. Press it again when you're back.
 
 > [!TIP]
@@ -72,6 +72,7 @@ https://github.com/user-attachments/assets/1038b4cf-f2fe-4d04-b8ec-d606f18a1b70
 | **Simulated lag** | Irregular micro-freezes that never repeat, with an adjustable intensity |
 | **Global shortcut** | `⌥⌘L` by default; pick another combination in Settings if it clashes |
 | **Live preview** | Shows exactly what others see, plus a small view of your real camera while the loop plays |
+| **Picture quality** | Full 1080p, or a softer 720p that makes the loop even harder to spot |
 | **Clip library** | Unlimited clips. Record 1–30 s or import any `.mov` / `.mp4`. Rename, pin, export |
 | **Keyboard-friendly** | `↑` `↓` to switch clips, `⌫` to delete, `⌘Z` to undo |
 | **Your camera name** | Rename the virtual camera to whatever you want it to show up as in the camera menu |
