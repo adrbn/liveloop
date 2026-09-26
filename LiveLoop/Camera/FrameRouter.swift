@@ -107,6 +107,11 @@ final class FrameRouter {
         }
     }
 
+    /// Detail kept in everything the virtual camera sends, live and loop alike.
+    func setOutputQuality(_ quality: OutputQuality) {
+        queue.async { self.pipeline.outputQuality = quality }
+    }
+
     func disengage() {
         queue.async {
             self.transitionActive = false
@@ -126,7 +131,9 @@ final class FrameRouter {
     }
 
     func handleLiveFrame(_ sampleBuffer: CMSampleBuffer) {
-        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        // Idle (e.g. recording a clip with the camera off): nothing to send.
+        guard mode != .idle,
+              let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         let scaled = pipeline.scaledToOutput(pixelBuffer)
         latestLiveOutput = scaled
         // Only the live path emits when we're steady-state live.

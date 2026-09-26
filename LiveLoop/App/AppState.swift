@@ -42,6 +42,8 @@ final class AppState: ObservableObject {
     @Published private(set) var isEngaged = false
     @Published private(set) var mode: FrameRouter.Mode = .idle
     @Published private(set) var isRecording = false
+    /// True while a cold webcam starts up just before a recording begins.
+    @Published private(set) var isWarmingUp = false
     @Published private(set) var sinkConnected = false
     @Published private(set) var extensionInstalled = false
     @Published private(set) var cameras: [CameraOption] = []
@@ -79,6 +81,9 @@ final class AppState: ObservableObject {
     /// last consumer leaves, without disturbing a session the user started by hand.
     private var engagedOnDemand = false
     private var onDemandDisengageTask: Task<Void, Never>?
+    /// Who needs the real webcam. Tracked here, not read from the capture
+    /// session, whose start/stop land later on the processing queue.
+    private var webcam = WebcamClaims()
 
     /// The menu-bar panel's hosting window (captured when it appears), used to
     /// scope global key shortcuts to the panel and away from Settings.
@@ -316,7 +321,8 @@ final class AppState: ObservableObject {
         }
         engagedOnDemand = onDemand
         reconnectSink()
-        camera.start(deviceID: settings.selectedCameraID)
+        // Already on for a clip: keep it (a restart would cut into the recording).
+        if webcam.claim(.virtualCamera) { camera.start(deviceID: settings.selectedCameraID) }
         router.engageLive()
         isEngaged = true
         if onDemand {
@@ -332,7 +338,8 @@ final class AppState: ObservableObject {
         onDemandDisengageTask = nil
         engagedOnDemand = false
         router.disengage()
-        camera.stop()
+        // A recording in progress keeps the webcam; it turns off when that ends.
+        if webcam.release(.virtualCamera) { camera.stop() }
         publisher.disconnect()
         isEngaged = false
         sinkConnected = false
@@ -454,24 +461,46 @@ final class AppState: ObservableObject {
 
     // MARK: - Recording
 
+    /// A cold webcam needs a moment to start and settle its exposure; recording
+    /// straight away would bake a dark first second into the loop.
+    private static let warmUpNanoseconds: UInt64 = 1_500_000_000
+
+    /// Warming up or recording: the webcam is on for a clip.
+    var isCapturingClip: Bool { isRecording || isWarmingUp }
+
+    /// Works with the virtual camera off too: the webcam comes on just for the
+    /// clip (you see yourself in the panel) and goes off again afterwards.
     func startRecording() {
-        guard !isRecording else { return }
+        guard !isCapturingClip else { return }
+        isWarmingUp = true   // also blocks a second start while we wait below
         Task {
-            guard await requestCameraAccess() else { return }
-            if !camera.isRunning { camera.start(deviceID: settings.selectedCameraID) }
-            let target = max(1, settings.recordDurationSeconds)
-            isRecording = true
-            recordSecondsLeft = Int(target.rounded())
-            recorder.start(maxDuration: target) { [weak self] url, duration in
-                self?.finishRecording(url: url, duration: duration)
+            guard await requestCameraAccess() else {
+                isWarmingUp = false
+                notify(.failure, "Camera access denied — enable it in System Settings ▸ Privacy & Security ▸ Camera.", sticky: true)
+                return
             }
-            // Tick the countdown down to zero, then auto-stop at the chosen length.
-            while isRecording && recordSecondsLeft > 0 {
-                try? await Task.sleep(nanoseconds: 1_000_000_000)
-                if isRecording { recordSecondsLeft -= 1 }
+            if webcam.claim(.clip) {
+                camera.start(deviceID: settings.selectedCameraID)
+                try? await Task.sleep(nanoseconds: Self.warmUpNanoseconds)
             }
-            if isRecording { recorder.stop() }
+            isWarmingUp = false
+            await record()
         }
+    }
+
+    private func record() async {
+        let target = max(1, settings.recordDurationSeconds)
+        isRecording = true
+        recordSecondsLeft = Int(target.rounded())
+        recorder.start(maxDuration: target) { [weak self] url, duration in
+            self?.finishRecording(url: url, duration: duration)
+        }
+        // Tick the countdown down to zero, then auto-stop at the chosen length.
+        while isRecording && recordSecondsLeft > 0 {
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            if isRecording { recordSecondsLeft -= 1 }
+        }
+        if isRecording { recorder.stop() }
     }
 
     func stopRecording() {
@@ -482,9 +511,16 @@ final class AppState: ObservableObject {
     private func finishRecording(url: URL?, duration: Double) {
         isRecording = false
         recordSecondsLeft = 0
-        guard let url else { return }
+        // Recording works with the virtual camera off; don't leave the light on.
+        if webcam.release(.clip) {
+            camera.stop()
+            livePreview.clear()   // no stale last frame next time
+        }
         let name = "Clip \(library.clips.count + 1)"
-        guard let clip = library.add(movingFileAt: url, name: name, duration: duration) else { return }
+        guard let url, let clip = library.add(movingFileAt: url, name: name, duration: duration) else {
+            notify(.failure, "Couldn’t save the clip. Try recording again.")
+            return
+        }
         // A new recording must never hijack the current selection or the running
         // loop (you can record a clip while looping another). Only auto-select
         // when nothing is selected yet — the first-ever recording.
@@ -551,6 +587,11 @@ final class AppState: ObservableObject {
     }
 
     private func observeSettings() {
+        // Fires once right away, so the saved quality applies from launch.
+        settings.$outputQuality
+            .sink { [router] quality in router.setOutputQuality(quality) }
+            .store(in: &cancellables)
+
         settings.$lagEnabled
             .combineLatest(settings.$lagIntensity)
             .sink { [weak self] _ in self?.applyLagSettings() }

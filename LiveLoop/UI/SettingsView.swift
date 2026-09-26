@@ -2,8 +2,8 @@
 //  SettingsView.swift
 //  LiveLoop
 //
-//  Preferences window: the shortcut, simulated lag, the camera name and the
-//  beta features.
+//  Preferences window: the shortcut, simulated lag, picture quality, the
+//  camera name and the beta features.
 //
 
 import SwiftUI
@@ -94,6 +94,18 @@ private struct SettingsTabs: View {
                 Text("Lifelike loop")
             } footer: {
                 Text(lagFooter).font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section {
+                Picker("Quality", selection: $settings.outputQuality) {
+                    Text("1080p · Sharpest").tag(OutputQuality.fullHD)
+                    Text("720p · Softer").tag(OutputQuality.hd)
+                }
+            } header: {
+                Text("Picture")
+            } footer: {
+                Text("720p softens your picture, live and loop alike, so the loop is even harder to spot. Applies right away.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)

@@ -3,7 +3,8 @@
 //  LiveLoop
 //
 //  The menu-bar panel: a live preview of what viewers see, the primary controls
-//  (start camera, live⇄loop, record), and the clip library.
+//  (record, live⇄loop, stop camera), and the clip library. Record is always
+//  there, camera on or off; clicking the preview starts the camera.
 //
 
 import SwiftUI
@@ -30,10 +31,7 @@ struct MenuContentView: View {
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
 
-            if app.isEngaged {
-                controls
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
+            controls
 
             Divider()
             clipSection
@@ -126,13 +124,22 @@ struct MenuContentView: View {
 
     // MARK: - Preview
 
+    private var previewContent: PreviewContent {
+        .resolve(engaged: app.isEngaged, recording: app.isCapturingClip, hasClip: app.currentClip != nil)
+    }
+
     private var previewCard: some View {
         ZStack {
-            if app.isEngaged {
+            switch previewContent {
+            case .output:
                 CameraPreview(renderer: app.preview)
-            } else if let clip = app.currentClip {
-                idleLoopReady(url: app.library.url(for: clip), clipName: clip.name)
-            } else {
+            case .selfView:
+                CameraPreview(renderer: app.livePreview)
+            case .loopReady:
+                if let clip = app.currentClip {
+                    idleLoopReady(url: app.library.url(for: clip), clipName: clip.name)
+                }
+            case .noClip:
                 idleNoClip
             }
         }
@@ -143,13 +150,15 @@ struct MenuContentView: View {
         .overlay(alignment: .topTrailing) {
             if app.isEngaged, app.isLoopActive { selfViewPIP.padding(8) }
         }
-        .overlay(alignment: .bottom) { if app.isEngaged { previewCaption } }
+        .overlay(alignment: .bottom) {
+            if previewContent == .output || previewContent == .selfView { previewCaption }
+        }
         // Clip AFTER the overlays so their corners follow the rounded card.
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.08)))
         .contentShape(RoundedRectangle(cornerRadius: 12))
         .onTapGesture {
-            if !app.isEngaged { Task { await app.engage() } }
+            if !app.isEngaged, !app.isCapturingClip { Task { await app.engage() } }
         }
     }
 
@@ -163,7 +172,7 @@ struct MenuContentView: View {
             VStack(spacing: 7) {
                 Image(systemName: "play.circle.fill")
                     .font(.system(size: 32)).foregroundStyle(.white)
-                Text("Start camera to go live").font(.subheadline).bold().foregroundStyle(.white)
+                Text("Click to start the camera").font(.subheadline).bold().foregroundStyle(.white)
             }
         }
         .overlay(alignment: .bottomLeading) {
@@ -184,7 +193,8 @@ struct MenuContentView: View {
                 Image(systemName: "record.circle")
                     .font(.system(size: 30)).foregroundStyle(.white.opacity(0.9))
                 Text("Record a clip to get started").font(.subheadline).bold().foregroundStyle(.white)
-                Text("Then Start Camera and loop it").font(.caption2).foregroundStyle(.white.opacity(0.6))
+                Text("Press Record below to capture a few seconds of you")
+                    .font(.caption2).foregroundStyle(.white.opacity(0.6))
             }
         }
     }
@@ -212,13 +222,17 @@ struct MenuContentView: View {
 
     @ViewBuilder
     private var modeBadge: some View {
-        switch app.mode {
-        case .loop:
-            badge("LOOP", color: .orange, icon: "repeat")
-        case .live:
-            badge("LIVE", color: .red, icon: "dot.radiowaves.left.and.right")
-        case .idle:
-            EmptyView()
+        if previewContent == .selfView {
+            badge("REC", color: .red, icon: "record.circle")
+        } else {
+            switch app.mode {
+            case .loop:
+                badge("LOOP", color: .orange, icon: "repeat")
+            case .live:
+                badge("LIVE", color: .red, icon: "dot.radiowaves.left.and.right")
+            case .idle:
+                EmptyView()
+            }
         }
     }
 
@@ -234,7 +248,7 @@ struct MenuContentView: View {
 
     private var previewCaption: some View {
         HStack {
-            Text(app.isLoopActive ? "Viewers see your loop" : "Viewers see your live camera")
+            Text(captionText)
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(.white.opacity(0.9))
             Spacer()
@@ -244,10 +258,60 @@ struct MenuContentView: View {
                                    startPoint: .bottom, endPoint: .top))
     }
 
+    private var captionText: String {
+        if previewContent == .selfView {
+            return app.isWarmingUp ? "Starting your webcam…" : "Recording · only you see this"
+        }
+        return app.isLoopActive ? "Viewers see your loop" : "Viewers see your live camera"
+    }
+
     // MARK: - Controls
 
     private var controls: some View {
         VStack(alignment: .leading, spacing: 10) {
+            if app.isEngaged {
+                loopToggle.transition(.opacity.combined(with: .move(edge: .top)))
+            }
+            HStack(spacing: 8) {
+                recordButton
+                if app.isEngaged {
+                    Button { app.disengage() } label: {
+                        Label("Stop camera", systemImage: "power").labelStyle(.iconOnly)
+                    }
+                    .help("Stop the virtual camera")
+                    .accessibilityLabel("Stop camera")
+                    .transition(.opacity)
+                }
+            }
+            .controlSize(.large)
+        }
+    }
+
+    /// Prominent until the first clip exists: it's the one thing to do first.
+    @ViewBuilder
+    private var recordButton: some View {
+        let button = Button {
+            app.isRecording ? app.stopRecording() : app.startRecording()
+        } label: {
+            Label(recordTitle, systemImage: app.isRecording ? "stop.fill" : "record.circle")
+                .frame(maxWidth: .infinity)
+                .monospacedDigit()
+        }
+        .disabled(app.isWarmingUp)
+        if app.library.clips.isEmpty && !app.isCapturingClip {
+            button.buttonStyle(.borderedProminent)
+        } else {
+            button.tint(app.isRecording ? .red : nil)
+        }
+    }
+
+    private var recordTitle: String {
+        if app.isWarmingUp { return "Starting camera…" }
+        if app.isRecording { return "Stop · \(app.recordSecondsLeft)s" }
+        return "Record \(Int(app.settings.recordDurationSeconds))s clip"
+    }
+
+    private var loopToggle: some View {
         Button { app.toggleLoopLive() } label: {
             actionRow(title: app.isLoopActive ? "Switch back to live camera" : "Switch to Loop",
                       subtitle: app.isLoopActive
@@ -259,27 +323,6 @@ struct MenuContentView: View {
         }
         .buttonStyle(.plain)
         .disabled(!app.isLoopActive && app.currentClip == nil)
-
-        HStack(spacing: 8) {
-            Button {
-                app.isRecording ? app.stopRecording() : app.startRecording()
-            } label: {
-                Label(app.isRecording ? "Stop · \(app.recordSecondsLeft)s"
-                                      : "Record \(Int(app.settings.recordDurationSeconds))s clip",
-                      systemImage: app.isRecording ? "stop.fill" : "record.circle")
-                    .frame(maxWidth: .infinity)
-                    .monospacedDigit()
-            }
-            .tint(app.isRecording ? .red : nil)
-
-            Button { app.disengage() } label: {
-                Label("Stop camera", systemImage: "power").labelStyle(.iconOnly)
-            }
-            .help("Stop the virtual camera")
-            .accessibilityLabel("Stop camera")
-        }
-        .controlSize(.large)
-        }
     }
 
     private var currentClipName: String { app.currentClip?.name ?? "a clip" }
@@ -430,6 +473,7 @@ struct MenuContentView: View {
     // MARK: - Status helpers
 
     private var statusText: String {
+        if app.isWarmingUp { return "Starting camera…" }
         if app.isRecording { return "Recording…" }
         switch app.mode {
         case .loop: return "Looping — you can step away"
@@ -439,7 +483,7 @@ struct MenuContentView: View {
     }
 
     private var statusColor: Color {
-        if app.isRecording { return .red }
+        if app.isCapturingClip { return .red }
         switch app.mode {
         case .loop: return .orange
         case .live: return .red

@@ -21,6 +21,9 @@ final class ImagePipeline {
     private let outputWidth = Int(LiveLoop.frameWidth)
     private let outputHeight = Int(LiveLoop.frameHeight)
 
+    /// Detail kept in every output frame. Set and read on the processing queue.
+    var outputQuality: OutputQuality = .fullHD
+
     init() {
         if let device = MTLCreateSystemDefaultDevice() {
             context = CIContext(mtlDevice: device, options: [.cacheIntermediates: false])
@@ -150,9 +153,29 @@ final class ImagePipeline {
     /// Renders a CIImage into a fresh output buffer using aspect-fill geometry.
     private func render(_ image: CIImage) -> CVPixelBuffer? {
         guard let output = dequeue() else { return nil }
-        let positioned = aspectFill(image)
+        let positioned = softened(aspectFill(image))
         context.render(positioned, to: output)
         return output
+    }
+
+    /// Keeps only the detail `outputQuality` allows: resamples the frame down
+    /// (e.g. to 1280×720), then stretches it back over the full output frame.
+    /// The downscale must be a real resample (Lanczos): two plain affine
+    /// transforms would be merged by CoreImage and cancel out. Clamping
+    /// repeats the edge pixels so neither step samples emptiness (a dark rim).
+    private func softened(_ image: CIImage) -> CIImage {
+        let scale = CGFloat(outputQuality.detailScale)
+        guard scale < 1 else { return image }
+        let bounds = CGRect(x: 0, y: 0, width: outputWidth, height: outputHeight)
+        let smallBounds = CGRect(x: 0, y: 0, width: bounds.width * scale, height: bounds.height * scale)
+        return image.cropped(to: bounds).clampedToExtent()
+            .applyingFilter("CILanczosScaleTransform", parameters: [
+                kCIInputScaleKey: scale,
+                kCIInputAspectRatioKey: 1,
+            ])
+            .cropped(to: smallBounds).clampedToExtent()
+            .transformed(by: CGAffineTransform(scaleX: 1 / scale, y: 1 / scale))
+            .cropped(to: bounds)
     }
 
     /// Scales `image` to cover the output rect, then translates so the centre

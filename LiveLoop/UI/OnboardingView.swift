@@ -31,7 +31,7 @@ struct OnboardingView: View {
 
                 step(number: 3,
                      title: "Pick LiveLoop as your camera",
-                     detail: "In your meeting app’s camera menu, choose “\(app.settings.cameraName)”. Use Start Camera in the menu bar, then the shortcut to step away.",
+                     detail: "In your meeting app’s camera menu, choose “\(app.settings.cameraName)”. Then record a clip from the menu bar and press the shortcut to step away.",
                      content: AnyView(EmptyView()))
             }
 

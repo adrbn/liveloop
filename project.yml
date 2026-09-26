@@ -92,6 +92,10 @@ targets:
       - path: LiveLoop/Library/Clip.swift
       - path: LiveLoop/Library/ClipLibrary.swift
       - path: LiveLoop/Shared/SharedConstants.swift
+      - path: LiveLoop/Shared/ImagePipeline.swift
+      - path: LiveLoop/Camera/OutputQuality.swift
+      - path: LiveLoop/Camera/WebcamClaims.swift
+      - path: LiveLoop/UI/PreviewContent.swift
       # Beta features: only their pure logic is compiled into the tests.
       - path: LiveLoop/Beta/Core
     settings:
