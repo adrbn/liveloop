@@ -19,6 +19,7 @@ final class ClipRecorder {
     private var writer: AVAssetWriter?
     private var input: AVAssetWriterInput?
     private var startPTS: CMTime?
+    private var lastPTS: CMTime = .zero
     private var outputURL: URL?
     private var maxDuration: Double = 60
     private var onFinished: ((URL?, Double) -> Void)?
@@ -37,6 +38,7 @@ final class ClipRecorder {
             self.writer = nil
             self.input = nil
             self.startPTS = nil
+            self.lastPTS = .zero
             self.outputURL = FileManager.default.temporaryDirectory
                 .appendingPathComponent("liveloop-\(UUID().uuidString).mov")
             self.isRecording = true
@@ -105,7 +107,6 @@ final class ClipRecorder {
         }
     }
 
-    private var lastPTS: CMTime = .zero
     private func currentEndTime() -> CMTime {
         lastPTS == .zero ? (startPTS ?? .zero) : lastPTS
     }
