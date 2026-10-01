@@ -4,7 +4,8 @@
 //
 //  A bigger preview that floats over your call: what viewers see and your
 //  real camera, side by side or one over the other, so you can line yourself
-//  up with the loop before switching back. Resizable; fed only while open.
+//  up with the loop before switching back. Dark and edge to edge, like a video
+//  player; the controls sit in the title bar. Fed only while on screen.
 //
 
 import SwiftUI
@@ -18,21 +19,30 @@ struct PreviewWindowView: View {
 
     private var layout: PreviewWindowLayout { PreviewWindowLayout(storedValue: storedLayout) }
 
+    /// Height of the title-bar strip the controls share with the window buttons.
+    private let titleBarHeight: CGFloat = 32
+    private let gap: CGFloat = 6
+
     var body: some View {
-        VStack(spacing: 10) {
-            toolbar
-            if app.isEngaged {
-                pictures
-            } else {
-                cameraOff
+        VStack(spacing: 0) {
+            titleBar
+            Group {
+                if app.isEngaged { pictures } else { cameraOff }
             }
+            .padding([.horizontal, .bottom], gap)
         }
-        .padding(12)
-        .frame(minWidth: 420, minHeight: 200)
+        .frame(minWidth: 460, minHeight: 190)
+        .background(Color.black)
+        .ignoresSafeArea()
+        .environment(\.colorScheme, .dark)
+        .tint(.brand)
         .background(WindowAccessor { window in
+            guard let window else { return }
             // Stay above the meeting window, on every Space.
-            window?.level = .floating
-            window?.collectionBehavior.insert(.canJoinAllSpaces)
+            window.level = .floating
+            window.collectionBehavior.insert(.canJoinAllSpaces)
+            window.isMovableByWindowBackground = true
+            window.backgroundColor = .black
         })
         // Feed only while actually on screen: minimised or hidden, the layers
         // never drain (see `PreviewRenderer`). Closing the window disappears it.
@@ -40,66 +50,99 @@ struct PreviewWindowView: View {
         .onDisappear { app.setWindowPreviewsActive(false) }
     }
 
-    private var toolbar: some View {
-        HStack {
+    // MARK: - Title bar
+
+    private var titleBar: some View {
+        HStack(spacing: 8) {
+            Spacer()
             Picker("Layout", selection: $storedLayout) {
                 ForEach(PreviewWindowLayout.allCases) { Text($0.title).tag($0.rawValue) }
             }
             .pickerStyle(.segmented)
             .labelsHidden()
             .fixedSize()
-            Spacer()
             if app.isEngaged {
-                Button(app.isLoopActive ? "Back to live" : "Switch to Loop") { app.toggleLoopLive() }
-                    .disabled(!app.isLoopActive && app.currentClip == nil)
+                Button { app.toggleLoopLive() } label: {
+                    Label(app.isLoopActive ? "Back to live" : "Switch to Loop",
+                          systemImage: app.isLoopActive ? "video.fill" : "repeat")
+                }
+                .disabled(!app.isLoopActive && app.currentClip == nil)
             }
         }
+        .controlSize(.small)
+        .padding(.leading, 80) // clear of the window buttons
+        .padding(.trailing, 10)
+        .frame(height: titleBarHeight)
     }
+
+    // MARK: - Pictures
 
     @ViewBuilder
     private var pictures: some View {
         switch layout {
         case .sideBySide:
-            HStack(spacing: 10) {
-                pane(CameraPreview(renderer: app.windowPreview), label: viewersLabel)
-                pane(CameraPreview(renderer: app.windowLivePreview), label: "You · real camera")
+            HStack(spacing: gap) {
+                pane(CameraPreview(renderer: app.windowPreview), badge: modeBadge, caption: viewersCaption)
+                pane(CameraPreview(renderer: app.windowLivePreview),
+                     badge: badge("YOU", color: .green), caption: "Real camera · only you see this")
             }
         case .overlay:
             pane(ZStack {
                 CameraPreview(renderer: app.windowPreview)
                 CameraPreview(renderer: app.windowLivePreview, opacity: layout.liveOpacity)
-            }, label: app.isLoopActive ? "Line yourself up with the loop" : "Viewers see your live camera")
+            }, badge: modeBadge, caption: app.isLoopActive
+                ? "Line yourself up with the loop, then switch back"
+                : "Your camera over what viewers see")
         }
     }
 
-    private var viewersLabel: String {
+    private var viewersCaption: String {
         app.isLoopActive ? "Viewers see your loop" : "Viewers see your live camera"
     }
 
-    private func pane(_ content: some View, label: String) -> some View {
+    private var modeBadge: some View {
+        app.isLoopActive ? badge("LOOP", color: .orange) : badge("LIVE", color: .red)
+    }
+
+    private func badge(_ text: String, color: Color) -> some View {
+        HStack(spacing: 4) {
+            Circle().fill(color).frame(width: 6, height: 6)
+            Text(text).font(.system(size: 10, weight: .bold))
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 7).padding(.vertical, 3)
+        .background(.ultraThinMaterial, in: Capsule())
+        .overlay(Capsule().stroke(color.opacity(0.4)))
+    }
+
+    private func pane(_ content: some View, badge: some View, caption: String) -> some View {
         content
             .aspectRatio(16 / 9, contentMode: .fit)
-            .background(Color.black)
-            .overlay(alignment: .bottomLeading) {
-                Text(label)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 7).padding(.vertical, 3)
-                    .background(.black.opacity(0.55), in: Capsule())
-                    .padding(8)
+            .overlay(alignment: .topLeading) { badge.padding(8) }
+            .overlay(alignment: .bottom) {
+                HStack {
+                    Text(caption)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.9))
+                    Spacer()
+                }
+                .padding(.horizontal, 9).padding(.vertical, 6)
+                .background(LinearGradient(colors: [.black.opacity(0.55), .clear],
+                                           startPoint: .bottom, endPoint: .top))
             }
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var cameraOff: some View {
         VStack(spacing: 10) {
-            Image(systemName: "video.slash").font(.system(size: 28)).foregroundStyle(.secondary)
-            Text("The camera is off").font(.headline)
+            Image(systemName: "video.slash").font(.system(size: 26)).foregroundStyle(.white.opacity(0.5))
+            Text("The camera is off").font(.headline).foregroundStyle(.white)
             Button("Start the camera") { Task { await app.engage() } }
                 .buttonStyle(.borderedProminent)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
     }
 }
 

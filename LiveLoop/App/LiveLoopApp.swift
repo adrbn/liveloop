@@ -40,7 +40,8 @@ struct LiveLoopApp: App {
             PreviewWindowView()
                 .environmentObject(appState)
         }
-        .defaultSize(width: 760, height: 260)
+        .windowStyle(.hiddenTitleBar)
+        .defaultSize(width: 780, height: 260)
         .defaultPosition(.topTrailing)
     }
 
