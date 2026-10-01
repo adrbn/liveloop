@@ -2,8 +2,8 @@
 //  SettingsView.swift
 //  LiveLoop
 //
-//  Preferences window: the shortcut, simulated lag, picture quality, the
-//  camera name and the beta features.
+//  Preferences window: the shortcut, simulated lag, how switches look,
+//  picture quality, the camera name and the beta features.
 //
 
 import SwiftUI
@@ -97,6 +97,17 @@ private struct SettingsTabs: View {
             }
 
             Section {
+                Picker("Switch", selection: $settings.switchStyle) {
+                    Text("Crossfade").tag(SwitchStyle.crossfade)
+                    Text("Freeze, then cut").tag(SwitchStyle.freeze)
+                }
+            } header: {
+                Text("Switching")
+            } footer: {
+                Text(switchFooter).font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section {
                 Picker("Quality", selection: $settings.outputQuality) {
                     Text("1080p · Sharpest").tag(OutputQuality.fullHD)
                     Text("720p · Softer").tag(OutputQuality.hd)
@@ -115,6 +126,15 @@ private struct SettingsTabs: View {
         let base = "Adds subtle, never-repeating freezes and micro-stutters so the loop reads like a flaky connection rather than a frozen app. The loop itself plays forward-then-backward so it never cuts."
         guard settings.lagEnabled, beta.connectionProfile != .off else { return base }
         return base + " Beta styles also go blocky now and then. A new style applies the next time the loop starts."
+    }
+
+    private var switchFooter: String {
+        switch settings.switchStyle {
+        case .crossfade:
+            return "Live and loop blend into each other over a third of a second."
+        case .freeze:
+            return "Your picture freezes for a moment, then jumps, like a connection hiccup. Hides a change of position better than a crossfade. Applies to the shortcut, the menu and Auto away."
+        }
     }
 
     private var intensityLabel: String {
