@@ -17,6 +17,8 @@ struct PreviewWindowView: View {
     @EnvironmentObject private var app: AppState
     @AppStorage("previewWindowLayout") private var storedLayout = PreviewWindowLayout.sideBySide.rawValue
 
+    @State private var windowRef = WindowRef()
+
     private var layout: PreviewWindowLayout { PreviewWindowLayout(storedValue: storedLayout) }
 
     /// Height of the title-bar strip the controls share with the window buttons.
@@ -31,23 +33,43 @@ struct PreviewWindowView: View {
             }
             .padding([.horizontal, .bottom], gap)
         }
-        .frame(minWidth: 460, minHeight: 190)
+        .frame(minWidth: 300, minHeight: 150)
         .background(Color.black)
         .ignoresSafeArea()
         .environment(\.colorScheme, .dark)
         .tint(.brand)
         .background(WindowAccessor { window in
-            guard let window else { return }
+            guard let window, windowRef.window !== window else { return }
+            windowRef.window = window
             // Stay above the meeting window, on every Space.
             window.level = .floating
             window.collectionBehavior.insert(.canJoinAllSpaces)
             window.isMovableByWindowBackground = true
             window.backgroundColor = .black
+            fitWindow()
+            windowRef.observeResizeEnd { fitWindow() }
         })
+        .onChange(of: storedLayout) { fitWindow() }
         // Feed only while actually on screen: minimised or hidden, the layers
         // never drain (see `PreviewRenderer`). Closing the window disappears it.
         .background(WindowVisibilityObserver { app.setWindowPreviewsActive($0) })
         .onDisappear { app.setWindowPreviewsActive(false) }
+    }
+
+    // MARK: - Window size
+
+    /// Sizes the window to its pictures (no black bars), keeping the current
+    /// picture height and the top edge where they are.
+    private func fitWindow() {
+        guard let window = windowRef.window else { return }
+        let current = window.contentRect(forFrameRect: window.frame)
+        let paneHeight = PreviewWindowLayout.paneHeight(contentHeight: current.height,
+                                                        titleBar: titleBarHeight, gap: gap)
+        let size = layout.contentSize(paneHeight: paneHeight, titleBar: titleBarHeight, gap: gap)
+        let content = NSRect(x: current.minX, y: current.maxY - size.height,
+                             width: size.width, height: size.height)
+        window.contentAspectRatio = size
+        window.setFrame(window.frameRect(forContentRect: content), display: true, animate: false)
     }
 
     // MARK: - Title bar
@@ -144,6 +166,22 @@ struct PreviewWindowView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
     }
+}
+
+/// The preview's window, held without making SwiftUI re-render when it's set.
+private final class WindowRef {
+    weak var window: NSWindow?
+    private var resizeObserver: NSObjectProtocol?
+
+    /// Calls `action` each time the user lets go after resizing the window.
+    func observeResizeEnd(_ action: @escaping () -> Void) {
+        resizeObserver.map(NotificationCenter.default.removeObserver)
+        resizeObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.didEndLiveResizeNotification, object: window, queue: .main
+        ) { _ in action() }
+    }
+
+    deinit { resizeObserver.map(NotificationCenter.default.removeObserver) }
 }
 
 /// Reports whether its window is visible on screen, including after it's

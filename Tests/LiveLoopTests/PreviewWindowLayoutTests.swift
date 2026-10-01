@@ -30,4 +30,20 @@ final class PreviewWindowLayoutTests: XCTestCase {
             XCTAssertEqual(PreviewWindowLayout(storedValue: layout.rawValue), layout)
         }
     }
+
+    func testSideBySideFitsTwoPicturesWithNoBars() {
+        let size = PreviewWindowLayout.sideBySide.contentSize(paneHeight: 180, titleBar: 32, gap: 6)
+        XCTAssertEqual(size.width, 2 * 320 + 3 * 6, accuracy: 0.001)
+        XCTAssertEqual(size.height, 32 + 180 + 6, accuracy: 0.001)
+    }
+
+    func testOverlayFitsOnePictureWithNoBars() {
+        let size = PreviewWindowLayout.overlay.contentSize(paneHeight: 180, titleBar: 32, gap: 6)
+        XCTAssertEqual(size.width, 320 + 2 * 6, accuracy: 0.001)
+        XCTAssertEqual(size.height, 32 + 180 + 6, accuracy: 0.001)
+    }
+
+    func testPaneHeightIsReadBackFromAWindowHeight() {
+        XCTAssertEqual(PreviewWindowLayout.paneHeight(contentHeight: 218, titleBar: 32, gap: 6), 180, accuracy: 0.001)
+    }
 }
