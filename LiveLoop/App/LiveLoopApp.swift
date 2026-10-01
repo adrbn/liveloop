@@ -3,8 +3,8 @@
 //  LiveLoop
 //
 //  App entry point. LiveLoop is a menu-bar-only app (LSUIElement), so its whole
-//  UI hangs off a MenuBarExtra, plus a Settings scene and a one-time onboarding
-//  window.
+//  UI hangs off a MenuBarExtra, plus a Settings scene, a one-time onboarding
+//  window and a floating preview window.
 //
 
 import SwiftUI
@@ -35,6 +35,14 @@ struct LiveLoopApp: App {
         }
         .windowResizability(.contentSize)
         .defaultPosition(.center)
+
+        Window("LiveLoop Preview", id: PreviewWindowView.windowID) {
+            PreviewWindowView()
+                .environmentObject(appState)
+        }
+        .windowStyle(.hiddenTitleBar)
+        .defaultSize(width: 808, height: 260) // side by side, no bars
+        .defaultPosition(.topTrailing)
     }
 
     private var menuBarSymbol: String {

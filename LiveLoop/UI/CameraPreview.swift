@@ -79,12 +79,15 @@ final class PreviewRenderer {
 /// SwiftUI host for the preview layer.
 struct CameraPreview: NSViewRepresentable {
     let renderer: PreviewRenderer
+    var opacity: Double = 1
 
     func makeNSView(context: Context) -> PreviewHostView {
         PreviewHostView(displayLayer: renderer.layer)
     }
 
-    func updateNSView(_ nsView: PreviewHostView, context: Context) {}
+    func updateNSView(_ nsView: PreviewHostView, context: Context) {
+        nsView.alphaValue = opacity
+    }
 }
 
 final class PreviewHostView: NSView {

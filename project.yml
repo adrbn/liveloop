@@ -97,6 +97,7 @@ targets:
       - path: LiveLoop/Camera/SwitchTransition.swift
       - path: LiveLoop/Camera/WebcamClaims.swift
       - path: LiveLoop/UI/PreviewContent.swift
+      - path: LiveLoop/UI/PreviewWindowLayout.swift
       # Beta features: only their pure logic is compiled into the tests.
       - path: LiveLoop/Beta/Core
     settings:
