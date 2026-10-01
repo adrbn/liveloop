@@ -34,7 +34,9 @@ struct PreviewWindowView: View {
             window?.level = .floating
             window?.collectionBehavior.insert(.canJoinAllSpaces)
         })
-        .onAppear { app.setWindowPreviewsActive(true) }
+        // Feed only while actually on screen: minimised or hidden, the layers
+        // never drain (see `PreviewRenderer`). Closing the window disappears it.
+        .background(WindowVisibilityObserver { app.setWindowPreviewsActive($0) })
         .onDisappear { app.setWindowPreviewsActive(false) }
     }
 
@@ -98,5 +100,43 @@ struct PreviewWindowView: View {
                 .buttonStyle(.borderedProminent)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+/// Reports whether its window is visible on screen, including after it's
+/// minimised, restored, moved to another Space or fully covered.
+private struct WindowVisibilityObserver: NSViewRepresentable {
+    let onChange: (Bool) -> Void
+
+    func makeNSView(context: Context) -> ObservingView { ObservingView(onChange: onChange) }
+    func updateNSView(_ nsView: ObservingView, context: Context) {}
+
+    final class ObservingView: NSView {
+        private let onChange: (Bool) -> Void
+        private var observer: NSObjectProtocol?
+
+        init(onChange: @escaping (Bool) -> Void) {
+            self.onChange = onChange
+            super.init(frame: .zero)
+        }
+
+        required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            observer.map(NotificationCenter.default.removeObserver)
+            observer = nil
+            guard let window else { return }
+            observer = NotificationCenter.default.addObserver(
+                forName: NSWindow.didChangeOcclusionStateNotification, object: window, queue: .main
+            ) { [weak self] _ in self?.report() }
+            report()
+        }
+
+        private func report() {
+            onChange(window?.occlusionState.contains(.visible) ?? false)
+        }
+
+        deinit { observer.map(NotificationCenter.default.removeObserver) }
     }
 }
