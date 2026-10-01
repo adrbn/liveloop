@@ -54,6 +54,10 @@ final class AppState: ObservableObject {
     let preview = PreviewRenderer()
     /// Mirror of the real webcam — a self-view, useful while looping.
     let livePreview = PreviewRenderer()
+    /// The same two mirrors for the bigger, floating preview window (a display
+    /// layer can only live in one view).
+    let windowPreview = PreviewRenderer()
+    let windowLivePreview = PreviewRenderer()
 
     // Engine.
     private let processingQueue = DispatchQueue(label: "com.adrbn.LiveLoop.processing", qos: .userInteractive)
@@ -108,18 +112,24 @@ final class AppState: ObservableObject {
         router.onModeChange = { [weak self] mode in self?.mode = mode }
 
         // Mirror every emitted frame into the in-app preview.
-        let preview = self.preview
+        let preview = self.preview, windowPreview = self.windowPreview
         router.onOutputFrame = { buffer in
-            DispatchQueue.main.async { preview.enqueue(buffer) }
+            DispatchQueue.main.async {
+                preview.enqueue(buffer)
+                windowPreview.enqueue(buffer)
+            }
         }
 
         // Fan every captured frame out to the router, recorder, and self-view.
-        let livePreview = self.livePreview
+        let livePreview = self.livePreview, windowLivePreview = self.windowLivePreview
         camera.onSampleBuffer = { [router, recorder, liveFrameTap] sampleBuffer in
             router.handleLiveFrame(sampleBuffer)
             recorder.append(sampleBuffer)
             if let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) {
-                DispatchQueue.main.async { livePreview.enqueue(pixelBuffer) }
+                DispatchQueue.main.async {
+                    livePreview.enqueue(pixelBuffer)
+                    windowLivePreview.enqueue(pixelBuffer)
+                }
                 liveFrameTap.offer(pixelBuffer)   // no-op unless a beta feature listens
             }
         }
@@ -155,6 +165,12 @@ final class AppState: ObservableObject {
     func setPreviewsActive(_ active: Bool) {
         preview.setActive(active)
         livePreview.setActive(active)
+    }
+
+    /// Same rule for the floating preview window, which has its own lifetime.
+    func setWindowPreviewsActive(_ active: Bool) {
+        windowPreview.setActive(active)
+        windowLivePreview.setActive(active)
     }
 
     /// Stop the camera cleanly when the app quits (don't leave capture running).
@@ -515,6 +531,7 @@ final class AppState: ObservableObject {
         if webcam.release(.clip) {
             camera.stop()
             livePreview.clear()   // no stale last frame next time
+            windowLivePreview.clear()
         }
         let name = "Clip \(library.clips.count + 1)"
         guard let url, let clip = library.add(movingFileAt: url, name: name, duration: duration) else {

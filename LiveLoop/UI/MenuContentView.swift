@@ -252,10 +252,28 @@ struct MenuContentView: View {
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(.white.opacity(0.9))
             Spacer()
+            if previewContent == .output { popOutButton }
         }
         .padding(.horizontal, 8).padding(.vertical, 5)
         .background(LinearGradient(colors: [.black.opacity(0.55), .clear],
                                    startPoint: .bottom, endPoint: .top))
+    }
+
+    /// Opens the bigger preview, which floats above the call.
+    private var popOutButton: some View {
+        Button {
+            openWindow(id: PreviewWindowView.windowID)
+            NSApp.activate(ignoringOtherApps: true)
+        } label: {
+            Image(systemName: "arrow.up.left.and.arrow.down.right")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 20, height: 20)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help("Open a bigger preview")
+        .accessibilityLabel("Open a bigger preview")
     }
 
     private var captionText: String {
