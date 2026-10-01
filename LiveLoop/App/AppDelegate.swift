@@ -14,6 +14,9 @@ import AVFoundation
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
+    /// Opens the setup window. Set once SwiftUI is up (see `MenuBarLabel`).
+    var showSetup: (() -> Void)?
+
     func applicationWillFinishLaunching(_ notification: Notification) {
         // Beta automations: take `liveloop://` links ourselves (registered before
         // launch completes so a link that launched the app isn't lost). Handling
@@ -27,6 +30,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if AVCaptureDevice.authorizationStatus(for: .video) != .notDetermined {
             NSApp.setActivationPolicy(.accessory)
         }
+    }
+
+    /// Clicking the Dock icon shows setup: the menu-bar icon can be out of
+    /// sight (behind the notch, or hidden in System Settings ▸ Menu Bar).
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag { showSetup?() }
+        return true
     }
 
     @objc private func handleGetURL(_ event: NSAppleEventDescriptor, withReplyEvent reply: NSAppleEventDescriptor) {

@@ -7,6 +7,7 @@
 //  window and a floating preview window.
 //
 
+import AVFoundation
 import SwiftUI
 
 @main
@@ -20,7 +21,8 @@ struct LiveLoopApp: App {
             MenuContentView()
                 .environmentObject(appState)
         } label: {
-            MenuBarLabel(symbol: menuBarSymbol, loopTimer: appState.betaController.loopTimer)
+            MenuBarLabel(symbol: menuBarSymbol, loopTimer: appState.betaController.loopTimer,
+                         onLaunch: showSetupOnFirstRun)
         }
         .menuBarExtraStyle(.window)
 
@@ -43,6 +45,18 @@ struct LiveLoopApp: App {
         .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 808, height: 260) // side by side, no bars
         .defaultPosition(.topTrailing)
+    }
+
+    /// First run opens setup by itself, so nobody has to find the menu-bar
+    /// icon first. The Dock icon opens it again.
+    private func showSetupOnFirstRun(_ openWindow: OpenWindowAction) {
+        guard appDelegate.showSetup == nil else { return } // once per launch
+        let showSetup = {
+            openWindow(id: "onboarding")
+            NSApp.activate(ignoringOtherApps: true)
+        }
+        appDelegate.showSetup = showSetup
+        if AVCaptureDevice.authorizationStatus(for: .video) == .notDetermined { showSetup() }
     }
 
     private var menuBarSymbol: String {
