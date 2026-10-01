@@ -591,6 +591,9 @@ final class AppState: ObservableObject {
         settings.$outputQuality
             .sink { [router] quality in router.setOutputQuality(quality) }
             .store(in: &cancellables)
+        settings.$switchStyle
+            .sink { [router] style in router.setSwitchStyle(style) }
+            .store(in: &cancellables)
 
         settings.$lagEnabled
             .combineLatest(settings.$lagIntensity)

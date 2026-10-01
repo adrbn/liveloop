@@ -45,6 +45,9 @@ final class Settings: ObservableObject {
     @Published var outputQuality: OutputQuality {
         didSet { defaults.set(outputQuality.rawValue, forKey: Key.outputQuality) }
     }
+    @Published var switchStyle: SwitchStyle {
+        didSet { defaults.set(switchStyle.rawValue, forKey: Key.switchStyle) }
+    }
 
     init() {
         cameraName = defaults.string(forKey: LiveLoop.DefaultsKey.cameraName) ?? LiveLoop.defaultCameraName
@@ -57,6 +60,7 @@ final class Settings: ObservableObject {
         hotkeyModifiers = UInt32(defaults.object(forKey: Key.hotkeyModifiers) as? Int ?? Int(cmdKey | optionKey))
         autoEngageOnLaunch = defaults.bool(forKey: Key.autoEngage)
         outputQuality = OutputQuality(storedValue: defaults.string(forKey: Key.outputQuality))
+        switchStyle = SwitchStyle(storedValue: defaults.string(forKey: Key.switchStyle))
     }
 
     /// Human-readable form of the current hotkey, e.g. "⌥⌘L".
@@ -74,5 +78,6 @@ final class Settings: ObservableObject {
         static let hotkeyModifiers = "hotkeyModifiers"
         static let autoEngage = "autoEngageOnLaunch"
         static let outputQuality = "outputQuality"
+        static let switchStyle = "switchStyle"
     }
 }
