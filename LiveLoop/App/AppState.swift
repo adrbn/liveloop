@@ -341,11 +341,9 @@ final class AppState: ObservableObject {
         if webcam.claim(.virtualCamera) { camera.start(deviceID: settings.selectedCameraID) }
         router.engageLive()
         isEngaged = true
-        if onDemand {
-            notify(.info, "Camera on — an app opened LiveLoop.")
-        } else {
-            notify(.success, "Camera on — you're live.")
-        }
+        // Started by hand, the LIVE badge says it all; only explain a camera
+        // that came on by itself.
+        if onDemand { notify(.info, "Camera on — an app opened LiveLoop.") }
     }
 
     func disengage() {
