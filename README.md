@@ -5,11 +5,15 @@
 <h1 align="center">LiveLoop</h1>
 
 <p align="center">
-  <b>Loop yourself in.</b><br>
-  Loop a few seconds of yourself on any video call while you grab a coffee —<br>
-  one shortcut out, one shortcut back. Free, open source, native to macOS.
+  <b>Loop yourself in.</b><br><br>
+  Loop a few seconds of yourself on any video call while you grab a coffee.<br>
+  Free, open source, native to macOS.
 </p>
 
+<p align="center">
+  <i>Free and open-source alternative to CamLoop for instant camera replay on macOS.</i>
+</p>
+<br>
 <p align="center">
   <a href="https://github.com/adrbn/liveloop/releases/latest"><img src="docs/assets/buttons/download.svg" height="64" alt="Download for macOS — free, macOS 14 Sonoma or later"></a>
   &nbsp;
@@ -17,7 +21,7 @@
   &nbsp;
   <a href="https://github.com/adrbn/liveloop/issues/new"><img src="docs/assets/buttons/feedback.svg" height="64" alt="Suggest a feature or report a bug"></a>
 </p>
-
+<br>
 <p align="center">
   <a href="https://github.com/adrbn/liveloop/releases/latest"><img src="https://img.shields.io/github/v/release/adrbn/liveloop?style=for-the-badge&label=version&color=A64DFF&labelColor=1e1e2e&logo=github&logoColor=white" alt="Latest version"></a>
   <img src="https://img.shields.io/badge/macOS-14%2B-3896FF?style=for-the-badge&logo=apple&logoColor=white&labelColor=1e1e2e" alt="macOS 14 Sonoma or later">
@@ -184,3 +188,6 @@ How the app and the camera extension fit together, and why, is in [`docs/DESIGN.
 ## License
 
 [GPL-3.0](LICENSE) © 2026 adrbn. You can use, study, change and share LiveLoop, but anything you distribute that is built on it must stay open source under the same license.
+
+## Disclaimer
+<p>LiveLoop is an independent project and is not affiliated with, endorsed by, or sponsored by CamLoop.</p>
