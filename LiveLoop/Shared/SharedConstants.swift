@@ -83,13 +83,14 @@ enum LiveLoop {
     }
 
     /// The display name the app sends as a custom device property (a string).
-    /// The extension keeps its own copy and uses it the next time it starts:
-    /// a CMIO device's name is fixed once it's published.
+    /// The extension keeps its own copy and republishes the camera under it
+    /// (a published CMIO device's name is fixed).
     enum CameraName {
-        /// FourCC `'lnam'`, the selector the app sets.
-        static let selector: UInt32 = 0x6C_6E_61_6D
+        /// FourCC `'llcn'`, the selector the app sets. Not `'lnam'`: that's
+        /// CMIO's own read-only object name.
+        static let selector: UInt32 = 0x6C_6C_63_6E
         /// The same property as the extension declares it.
-        static let propertyName = "4cc_lnam_glob_0000"
+        static let propertyName = "4cc_llcn_glob_0000"
     }
 
     /// The shared defaults suite, or `.standard` if the App Group is unavailable

@@ -35,12 +35,30 @@ final class ExtensionProviderSource: NSObject, CMIOExtensionProviderSource {
     init(clientQueue: DispatchQueue?) {
         super.init()
         provider = CMIOExtensionProvider(source: self, clientQueue: clientQueue)
-        deviceSource = ExtensionDeviceSource(localizedName: ExtensionDeviceSource.savedCameraName)
+        deviceSource = makeDeviceSource(named: ExtensionDeviceSource.savedCameraName)
         do {
             try provider.addDevice(deviceSource.device)
         } catch {
             logger.error("Failed to add device: \(error.localizedDescription, privacy: .public)")
             fatalError("Failed to add device: \(error.localizedDescription)")
+        }
+    }
+
+    private func makeDeviceSource(named name: String) -> ExtensionDeviceSource {
+        let source = ExtensionDeviceSource(localizedName: name)
+        source.onRename = { [weak self] name in self?.republish(named: name) }
+        return source
+    }
+
+    /// A published device's name is fixed, so a rename swaps in a new device
+    /// with the same ID. Meeting apps see the camera vanish and come back.
+    private func republish(named name: String) {
+        do {
+            try provider.removeDevice(deviceSource.device)
+            deviceSource = makeDeviceSource(named: name)
+            try provider.addDevice(deviceSource.device)
+        } catch {
+            logger.error("Couldn't rename the camera: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -68,6 +86,8 @@ final class ExtensionProviderSource: NSObject, CMIOExtensionProviderSource {
 final class ExtensionDeviceSource: NSObject, CMIOExtensionDeviceSource {
 
     private(set) var device: CMIOExtensionDevice!
+    /// Called on the main queue with a new name, while nothing streams.
+    var onRename: ((String) -> Void)?
 
     private var _streamSource: ExtensionStreamSource!
     private var _streamSink: ExtensionStreamSink!
@@ -172,15 +192,19 @@ final class ExtensionDeviceSource: NSObject, CMIOExtensionDeviceSource {
         }
         if properties.contains(Self.offAirPictureProperty) {
             // Write-only in practice; an empty string keeps queries cheap.
-            deviceProperties.setPropertyState(CMIOExtensionPropertyState(value: "" as NSString),
-                                              forProperty: Self.offAirPictureProperty)
+            deviceProperties.setPropertyState(Self.writableState, forProperty: Self.offAirPictureProperty)
         }
         if properties.contains(Self.cameraNameProperty) {
-            deviceProperties.setPropertyState(CMIOExtensionPropertyState(value: Self.savedCameraName as NSString),
-                                              forProperty: Self.cameraNameProperty)
+            deviceProperties.setPropertyState(Self.writableState, forProperty: Self.cameraNameProperty)
         }
         return deviceProperties
     }
+
+    /// Write-only in practice: an empty string, explicitly not read-only, so
+    /// CMIO lets the app set it (a non-empty value came out read-only).
+    private static let writableState = CMIOExtensionPropertyState<AnyObject>(
+        value: "" as NSString,
+        attributes: CMIOExtensionPropertyAttributes(minValue: nil, maxValue: nil, validValues: nil, readOnly: false))
 
     func setDeviceProperties(_ deviceProperties: CMIOExtensionDeviceProperties) throws {
         let values = deviceProperties.propertiesDictionary
@@ -189,11 +213,17 @@ final class ExtensionDeviceSource: NSObject, CMIOExtensionDeviceSource {
             _timerQueue.async { self._placeholder.setCustomImage(Data(base64Encoded: base64) ?? Data()) }
         }
         if let name = values[Self.cameraNameProperty]?.value as? String, let url = Self.cameraNameURL {
-            // Takes effect on the next start: a published device keeps its name.
+            let name = LiveLoop.cameraName(from: name)
             do {
-                try LiveLoop.cameraName(from: name).write(to: url, atomically: true, encoding: .utf8)
+                try name.write(to: url, atomically: true, encoding: .utf8)
             } catch {
                 logger.error("Couldn't save the camera name: \(error.localizedDescription, privacy: .public)")
+            }
+            // Renaming republishes the device, so wait for the next start while
+            // anything streams.
+            if name != device.localizedName, _streamingCounter == 0, _streamingSinkCounter == 0 {
+                // After this set call returns: it swaps out this very device.
+                DispatchQueue.main.async { self.onRename?(name) }
             }
         }
     }
