@@ -571,6 +571,25 @@ final class AppState: ObservableObject {
         }
     }
 
+    /// Sets the picture the virtual camera shows while LiveLoop sends nothing
+    /// (app closed, camera off); nil goes back to the LiveLoop card. Returns
+    /// an error message for Settings to show, or nil on success.
+    func setOffAirPicture(from url: URL?) -> String? {
+        var jpeg = Data()
+        if let url {
+            guard let fitted = pipeline.outputJPEG(fromImageAt: url),
+                  fitted.count <= LiveLoop.OffAirPicture.maxBytes else {
+                return "Couldn’t use that picture. Try a JPEG, PNG or HEIC."
+            }
+            jpeg = fitted
+        }
+        guard SinkStreamPublisher.setOffAirPicture(jpeg) else {
+            return "Couldn’t update the virtual camera. Make sure it’s installed, then try again."
+        }
+        settings.hasOffAirPicture = url != nil
+        return nil
+    }
+
     func selectCamera(_ id: String?) {
         settings.selectedCameraID = id
         if isEngaged { camera.start(deviceID: id) }

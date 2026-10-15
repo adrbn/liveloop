@@ -89,6 +89,16 @@ final class ImagePipeline {
                                            options: [kCGImageDestinationLossyCompressionQuality as CIImageRepresentationOption: quality])
     }
 
+    /// Fits a picture file to the output frame (aspect fill, centre crop) as
+    /// JPEG, ready to send as the off-air picture. Nil if it isn't an image.
+    func outputJPEG(fromImageAt url: URL) -> Data? {
+        guard let image = CIImage(contentsOf: url, options: [.applyOrientationProperty: true]) else { return nil }
+        let bounds = CGRect(x: 0, y: 0, width: outputWidth, height: outputHeight)
+        return context.jpegRepresentation(of: aspectFill(image).cropped(to: bounds),
+                                          colorSpace: CGColorSpaceCreateDeviceRGB(),
+                                          options: [kCGImageDestinationLossyCompressionQuality as CIImageRepresentationOption: 0.85])
+    }
+
     // MARK: - Beta effects
 
     /// Beta (connection profiles): re-renders an output buffer as if it came

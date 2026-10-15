@@ -67,6 +67,20 @@ enum LiveLoop {
         }
     }
 
+    /// The picture the camera shows while the app isn't sending video, sent by
+    /// the app as a custom device property: the JPEG as a base64 string (CMIO
+    /// silently drops data values on custom properties; strings get through). The extension runs as a different
+    /// user, so it can't read the app's files or App Group defaults; it keeps
+    /// its own copy instead.
+    enum OffAirPicture {
+        /// FourCC `'plch'`, the selector the app sets.
+        static let selector: UInt32 = 0x70_6C_63_68
+        /// The same property as the extension declares it.
+        static let propertyName = "4cc_plch_glob_0000"
+        /// JPEG data larger than this is ignored. An empty string restores the default card.
+        static let maxBytes = 4_000_000
+    }
+
     /// The shared defaults suite, or `.standard` if the App Group is unavailable
     /// (e.g. entitlement not provisioned) so the app still runs.
     static var sharedDefaults: UserDefaults {

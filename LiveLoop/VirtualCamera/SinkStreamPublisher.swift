@@ -87,6 +87,22 @@ final class SinkStreamPublisher {
         findDevice(uid: LiveLoop.deviceUID) != nil
     }
 
+    /// Sends the off-air picture (JPEG; empty data = the default card) to the
+    /// extension, which keeps it. False if the virtual camera isn't installed
+    /// or refused it.
+    static func setOffAirPicture(_ jpeg: Data) -> Bool {
+        guard let device = findDevice(uid: LiveLoop.deviceUID) else { return false }
+        var address = CMIOObjectPropertyAddress(
+            mSelector: CMIOObjectPropertySelector(LiveLoop.OffAirPicture.selector),
+            mScope: CMIOObjectPropertyScope(kCMIOObjectPropertyScopeGlobal),
+            mElement: CMIOObjectPropertyElement(kCMIOObjectPropertyElementMain))
+        var value = jpeg.base64EncodedString() as CFString
+        let status = CMIOObjectSetPropertyData(device, &address, 0, nil,
+                                               UInt32(MemoryLayout<CFString>.size), &value)
+        if status != noErr { logger.error("Setting the off-air picture failed: \(status)") }
+        return status == noErr
+    }
+
     /// Calls `handler` whenever the set of CMIO devices changes (the virtual
     /// camera being installed, replaced, or removed) so the app can keep its
     /// "installed?" state live instead of caching a stale value at launch.

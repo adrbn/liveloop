@@ -140,8 +140,10 @@ final class ExtensionDeviceSource: NSObject, CMIOExtensionDeviceSource {
         }
     }
 
+    private static let offAirPictureProperty = CMIOExtensionProperty(rawValue: LiveLoop.OffAirPicture.propertyName)
+
     var availableProperties: Set<CMIOExtensionProperty> {
-        [.deviceTransportType, .deviceModel]
+        [.deviceTransportType, .deviceModel, Self.offAirPictureProperty]
     }
 
     func deviceProperties(forProperties properties: Set<CMIOExtensionProperty>) throws -> CMIOExtensionDeviceProperties {
@@ -152,10 +154,21 @@ final class ExtensionDeviceSource: NSObject, CMIOExtensionDeviceSource {
         if properties.contains(.deviceModel) {
             deviceProperties.model = "LiveLoop Virtual Camera"
         }
+        if properties.contains(Self.offAirPictureProperty) {
+            // Write-only in practice; an empty string keeps queries cheap.
+            deviceProperties.setPropertyState(CMIOExtensionPropertyState(value: "" as NSString),
+                                              forProperty: Self.offAirPictureProperty)
+        }
         return deviceProperties
     }
 
-    func setDeviceProperties(_ deviceProperties: CMIOExtensionDeviceProperties) throws {}
+    func setDeviceProperties(_ deviceProperties: CMIOExtensionDeviceProperties) throws {
+        guard let base64 = deviceProperties.propertiesDictionary[Self.offAirPictureProperty]?.value as? String else {
+            return
+        }
+        // The renderer is only touched on the timer queue.
+        _timerQueue.async { self._placeholder.setCustomImage(Data(base64Encoded: base64) ?? Data()) }
+    }
 
     // MARK: Source stream lifecycle (a client started/stopped consuming)
 

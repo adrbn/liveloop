@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 import Carbon.HIToolbox
 
 struct SettingsView: View {
@@ -21,6 +22,7 @@ private struct SettingsTabs: View {
     @ObservedObject var app: AppState
     @ObservedObject var settings: Settings
     @ObservedObject var beta: BetaSettings
+    @State private var offAirError: String?
 
     var body: some View {
         TabView {
@@ -187,6 +189,19 @@ private struct SettingsTabs: View {
                 TextField("Camera name", text: $settings.cameraName)
                 Text("Shown in Zoom, Meet, Teams and other apps. Reinstall the camera below to apply a new name.")
                     .font(.caption).foregroundStyle(.secondary)
+                LabeledContent("Off-air picture") {
+                    HStack {
+                        Button("Choose…", action: chooseOffAirPicture)
+                        if settings.hasOffAirPicture {
+                            Button("Use LiveLoop card") { offAirError = app.setOffAirPicture(from: nil) }
+                        }
+                    }
+                }
+                Text("Shown while LiveLoop isn’t sending video: app closed or camera off. A plain room or meeting background makes switching less obvious than the LiveLoop card.")
+                    .font(.caption).foregroundStyle(.secondary)
+                if let offAirError {
+                    Text(offAirError).font(.caption).foregroundStyle(.red)
+                }
             } header: {
                 Text("Appearance")
             }
@@ -210,6 +225,14 @@ private struct SettingsTabs: View {
             }
         }
         .formStyle(.grouped)
+    }
+
+    private func chooseOffAirPicture() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.image]
+        panel.allowsMultipleSelection = false
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        offAirError = app.setOffAirPicture(from: url)
     }
 
     @ViewBuilder

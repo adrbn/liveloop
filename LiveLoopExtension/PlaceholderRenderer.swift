@@ -32,6 +32,54 @@ final class PlaceholderRenderer {
         return image
     }()
 
+    /// The user's own off-air picture (app-fitted to the output size), kept in
+    /// the extension's container so it survives restarts. Nil = the default card.
+    private var customImage: CGImage?
+
+    private static let customImageURL: URL? = {
+        guard let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent("OffAirPicture.jpg")
+    }()
+
+    init() {
+        if let url = Self.customImageURL, let data = try? Data(contentsOf: url) {
+            apply(data)
+        }
+    }
+
+    /// Replaces the off-air picture (empty data restores the default card) and saves it.
+    func setCustomImage(_ data: Data) {
+        guard let url = Self.customImageURL else { return }
+        if data.isEmpty {
+            customImage = nil
+            try? FileManager.default.removeItem(at: url)
+            return
+        }
+        guard data.count <= LiveLoop.OffAirPicture.maxBytes, apply(data) else {
+            logger.error("Ignored an off-air picture that is too large or not an image (\(data.count) bytes)")
+            return
+        }
+        do {
+            try data.write(to: url, options: .atomic)
+        } catch {
+            logger.error("Couldn't save the off-air picture: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    /// Decodes `data` into the picture to draw; false (and no change) if it isn't an image.
+    @discardableResult
+    private func apply(_ data: Data) -> Bool {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              // Decode once now, not on every 30 fps draw.
+              let image = CGImageSourceCreateImageAtIndex(
+                source, 0, [kCGImageSourceShouldCacheImmediately: true] as CFDictionary) else { return false }
+        customImage = image
+        return true
+    }
+
     /// Renders the placeholder card directly into a BGRA pixel buffer.
     func draw(into pixelBuffer: CVPixelBuffer) {
         CVPixelBufferLockBaseAddress(pixelBuffer, [])
@@ -54,6 +102,12 @@ final class PlaceholderRenderer {
 
         let w = CGFloat(width)
         let h = CGFloat(height)
+
+        if let customImage {
+            ctx.interpolationQuality = .high
+            ctx.draw(customImage, in: CGRect(x: 0, y: 0, width: w, height: h))
+            return
+        }
 
         // Background — LiveLoop's near-black navy.
         ctx.setFillColor(red: 0.055, green: 0.067, blue: 0.098, alpha: 1)
