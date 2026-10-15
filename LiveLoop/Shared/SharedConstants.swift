@@ -20,8 +20,8 @@ enum LiveLoop {
     /// `OSSystemExtensionManager` activates.
     static let extensionBundleID = "com.adrbn.LiveLoop.Extension"
 
-    /// App Group used for the shared `UserDefaults` suite (settings such as the
-    /// virtual-camera display name). Both targets declare this in their
+    /// App Group used for the app's `UserDefaults` suite. The extension runs as
+    /// another user and can't read it. Both targets declare this in their
     /// entitlements. Team-prefixed so it also prefixes the extension's CMIO Mach
     /// service name (a CMIO requirement).
     static let appGroupID = "2TWQF4T93E.com.adrbn.LiveLoop"
@@ -47,7 +47,8 @@ enum LiveLoop {
 
     /// Keys for the shared `UserDefaults` suite.
     enum DefaultsKey {
-        /// User-customised virtual-camera display name (a free "Pro" feature).
+        /// User-customised virtual-camera display name (app side; the extension
+        /// gets it through `CameraName`).
         static let cameraName = "cameraName"
     }
 
@@ -81,15 +82,24 @@ enum LiveLoop {
         static let maxBytes = 4_000_000
     }
 
+    /// The display name the app sends as a custom device property (a string).
+    /// The extension keeps its own copy and uses it the next time it starts:
+    /// a CMIO device's name is fixed once it's published.
+    enum CameraName {
+        /// FourCC `'lnam'`, the selector the app sets.
+        static let selector: UInt32 = 0x6C_6E_61_6D
+        /// The same property as the extension declares it.
+        static let propertyName = "4cc_lnam_glob_0000"
+    }
+
     /// The shared defaults suite, or `.standard` if the App Group is unavailable
     /// (e.g. entitlement not provisioned) so the app still runs.
     static var sharedDefaults: UserDefaults {
         UserDefaults(suiteName: appGroupID) ?? .standard
     }
 
-    /// Current virtual-camera display name, honouring the user's override.
-    static var cameraName: String {
-        let name = sharedDefaults.string(forKey: DefaultsKey.cameraName)
+    /// The display name to publish for a user's override (blank = the default).
+    static func cameraName(from name: String?) -> String {
         let trimmed = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return trimmed.isEmpty ? defaultCameraName : trimmed
     }

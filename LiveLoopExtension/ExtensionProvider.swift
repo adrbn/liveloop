@@ -35,7 +35,7 @@ final class ExtensionProviderSource: NSObject, CMIOExtensionProviderSource {
     init(clientQueue: DispatchQueue?) {
         super.init()
         provider = CMIOExtensionProvider(source: self, clientQueue: clientQueue)
-        deviceSource = ExtensionDeviceSource(localizedName: LiveLoop.cameraName)
+        deviceSource = ExtensionDeviceSource(localizedName: ExtensionDeviceSource.savedCameraName)
         do {
             try provider.addDevice(deviceSource.device)
         } catch {
@@ -141,9 +141,25 @@ final class ExtensionDeviceSource: NSObject, CMIOExtensionDeviceSource {
     }
 
     private static let offAirPictureProperty = CMIOExtensionProperty(rawValue: LiveLoop.OffAirPicture.propertyName)
+    private static let cameraNameProperty = CMIOExtensionProperty(rawValue: LiveLoop.CameraName.propertyName)
+
+    /// Where the extension keeps the name the app sent. We run as another user,
+    /// so the app's defaults are out of reach; this is our own container.
+    private static let cameraNameURL: URL? = {
+        guard let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent("CameraName.txt")
+    }()
+
+    /// The name to publish at startup: the last one the app sent, or the default.
+    static var savedCameraName: String {
+        LiveLoop.cameraName(from: cameraNameURL.flatMap { try? String(contentsOf: $0, encoding: .utf8) })
+    }
 
     var availableProperties: Set<CMIOExtensionProperty> {
-        [.deviceTransportType, .deviceModel, Self.offAirPictureProperty]
+        [.deviceTransportType, .deviceModel, Self.offAirPictureProperty, Self.cameraNameProperty]
     }
 
     func deviceProperties(forProperties properties: Set<CMIOExtensionProperty>) throws -> CMIOExtensionDeviceProperties {
@@ -159,15 +175,27 @@ final class ExtensionDeviceSource: NSObject, CMIOExtensionDeviceSource {
             deviceProperties.setPropertyState(CMIOExtensionPropertyState(value: "" as NSString),
                                               forProperty: Self.offAirPictureProperty)
         }
+        if properties.contains(Self.cameraNameProperty) {
+            deviceProperties.setPropertyState(CMIOExtensionPropertyState(value: Self.savedCameraName as NSString),
+                                              forProperty: Self.cameraNameProperty)
+        }
         return deviceProperties
     }
 
     func setDeviceProperties(_ deviceProperties: CMIOExtensionDeviceProperties) throws {
-        guard let base64 = deviceProperties.propertiesDictionary[Self.offAirPictureProperty]?.value as? String else {
-            return
+        let values = deviceProperties.propertiesDictionary
+        if let base64 = values[Self.offAirPictureProperty]?.value as? String {
+            // The renderer is only touched on the timer queue.
+            _timerQueue.async { self._placeholder.setCustomImage(Data(base64Encoded: base64) ?? Data()) }
         }
-        // The renderer is only touched on the timer queue.
-        _timerQueue.async { self._placeholder.setCustomImage(Data(base64Encoded: base64) ?? Data()) }
+        if let name = values[Self.cameraNameProperty]?.value as? String, let url = Self.cameraNameURL {
+            // Takes effect on the next start: a published device keeps its name.
+            do {
+                try LiveLoop.cameraName(from: name).write(to: url, atomically: true, encoding: .utf8)
+            } catch {
+                logger.error("Couldn't save the camera name: \(error.localizedDescription, privacy: .public)")
+            }
+        }
     }
 
     // MARK: Source stream lifecycle (a client started/stopped consuming)
