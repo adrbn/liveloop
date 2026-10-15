@@ -44,7 +44,7 @@ final class LoopEngine {
     func load(_ store: ClipFrameStore) {
         queue.async {
             self.store = store
-            self.sequencer = PingPongSequencer(frameCount: store.count)
+            self.sequencer = PingPongSequencer(segments: store.segments)
             self.sourceStep = 0
         }
     }
@@ -55,7 +55,7 @@ final class LoopEngine {
         queue.async {
             guard self.store?.isEmpty == false, self.timer == nil else { return }
             // The first tick advances one step, so start one step before the chosen frame.
-            self.sourceStep = startFrame.map { $0 - 1 } ?? 0
+            self.sourceStep = startFrame.map { self.sequencer.step(forFrame: $0) - 1 } ?? 0
             // A fresh seed each run so the lag pattern never repeats between
             // sessions. Determinism (for tests) lives in LagScheduler itself.
             self.seedCounter &+= 1

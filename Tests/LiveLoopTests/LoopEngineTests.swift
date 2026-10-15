@@ -41,6 +41,25 @@ final class PingPongSequencerTests: XCTestCase {
         XCTAssertEqual(seq.index(for: 4), 4)          // last frame
         XCTAssertEqual(seq.index(for: 5), 3)          // bounces back, not to 0
     }
+
+    func testPlaylistBouncesEachClipThenMovesOn() {
+        // Clip A = frames 0…2, clip B = frames 3…4.
+        let seq = PingPongSequencer(segments: [3, 2])
+        let produced = (0..<12).map { seq.index(for: $0) }
+        XCTAssertEqual(produced, [0, 1, 2, 1, 3, 4, 0, 1, 2, 1, 3, 4])
+    }
+
+    func testPlaylistHandlesSingleFrameClips() {
+        let seq = PingPongSequencer(segments: [1, 3])
+        XCTAssertEqual((0..<6).map { seq.index(for: $0) }, [0, 1, 2, 3, 2, 0])
+    }
+
+    func testStepForFrameInvertsIndex() {
+        let seq = PingPongSequencer(segments: [3, 4, 1])
+        for frame in 0..<seq.frameCount {
+            XCTAssertEqual(seq.index(for: seq.step(forFrame: frame)), frame)
+        }
+    }
 }
 
 final class LagSchedulerTests: XCTestCase {

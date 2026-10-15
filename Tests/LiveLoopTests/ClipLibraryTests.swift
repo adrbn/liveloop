@@ -115,4 +115,37 @@ final class ClipLibraryTests: XCTestCase {
         let reloaded = ClipLibrary(directory: tempDir)
         XCTAssertTrue(reloaded.clips.isEmpty, "entries without files are pruned on load")
     }
+
+    func testLoopSequenceIsTheClipAloneOutsideAPlaylist() throws {
+        let library = ClipLibrary(directory: tempDir)
+        let a = try XCTUnwrap(library.add(movingFileAt: makeTempFile(), name: "A", duration: 1))
+        let b = try XCTUnwrap(library.add(movingFileAt: makeTempFile(), name: "B", duration: 1))
+        library.setInPlaylist(a, true)   // a one-clip playlist is no playlist
+        XCTAssertEqual(library.loopSequence(startingAt: a).map(\.id), [a.id])
+        library.setInPlaylist(b, true)
+        let c = try XCTUnwrap(library.add(movingFileAt: makeTempFile(), name: "C", duration: 1))
+        XCTAssertEqual(library.loopSequence(startingAt: c).map(\.id), [c.id], "C isn't in the playlist")
+    }
+
+    func testLoopSequenceStartsAtTheSelectedPlaylistClip() throws {
+        let library = ClipLibrary(directory: tempDir)
+        let a = try XCTUnwrap(library.add(movingFileAt: makeTempFile(), name: "A", duration: 1))
+        let b = try XCTUnwrap(library.add(movingFileAt: makeTempFile(), name: "B", duration: 1))
+        let c = try XCTUnwrap(library.add(movingFileAt: makeTempFile(), name: "C", duration: 1))
+        for clip in [a, b, c] { library.setInPlaylist(clip, true) }
+        let order = library.clips.map(\.id)   // newest first: C, B, A
+        XCTAssertEqual(library.loopSequence(startingAt: b).map(\.id), [order[1], order[2], order[0]])
+
+        let reloaded = ClipLibrary(directory: tempDir)
+        XCTAssertTrue(reloaded.clips.allSatisfy(\.inPlaylist), "playlist membership persists")
+    }
+
+    func testDecodesLibrariesSavedBeforePlaylists() throws {
+        let json = """
+        [{"id":"\(UUID().uuidString)","name":"Old","fileName":"x.mov","durationSeconds":3,
+          "createdAt":0,"pinned":false}]
+        """
+        let clips = try JSONDecoder().decode([Clip].self, from: Data(json.utf8))
+        XCTAssertEqual(clips.first?.inPlaylist, false)
+    }
 }

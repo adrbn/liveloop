@@ -20,11 +20,24 @@ struct ClipFrameStore {
     /// Beta (smart switch): one pose signature per frame, or empty when the
     /// feature is off.
     let signatures: [[UInt8]]
+    /// Frame count of each clip, in play order: one entry, or several for a playlist.
+    let segments: [Int]
 
-    init(frames: [Data], fps: Double, signatures: [[UInt8]] = []) {
+    init(frames: [Data], fps: Double, signatures: [[UInt8]] = [], segments: [Int]? = nil) {
         self.frames = frames
         self.fps = fps
         self.signatures = signatures
+        self.segments = segments ?? [frames.count]
+    }
+
+    /// Several clips laid end to end, played one after the other (a playlist).
+    /// Signatures are kept only when every clip has them, so indices stay aligned.
+    static func joined(_ stores: [ClipFrameStore]) -> ClipFrameStore {
+        let withSignatures = stores.allSatisfy { !$0.signatures.isEmpty }
+        return ClipFrameStore(frames: stores.flatMap(\.frames),
+                              fps: stores.first?.fps ?? Double(LiveLoop.frameRate),
+                              signatures: withSignatures ? stores.flatMap(\.signatures) : [],
+                              segments: stores.flatMap(\.segments))
     }
 
     var count: Int { frames.count }

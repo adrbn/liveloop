@@ -426,6 +426,7 @@ struct MenuContentView: View {
                                         onSelect: { app.selectClip(clip) },
                                         onRename: { newName in app.library.rename(clip, to: newName) },
                                         onPin: { app.library.setPinned(clip, !clip.pinned) },
+                                        onPlaylist: { app.library.setInPlaylist(clip, !clip.inPlaylist) },
                                         onExport: { exportClip(clip) },
                                         onDelete: { app.deleteClip(clip) })
                                     .id(clip.id)
@@ -555,6 +556,7 @@ private struct ClipRow: View {
     let onSelect: () -> Void
     let onRename: (String) -> Void
     let onPin: () -> Void
+    let onPlaylist: () -> Void
     let onExport: () -> Void
     let onDelete: () -> Void
 
@@ -582,6 +584,10 @@ private struct ClipRow: View {
             }
             Spacer(minLength: 2)
             if !isEditing {
+                if clip.inPlaylist {
+                    Image(systemName: "list.bullet").font(.caption2).foregroundStyle(.secondary)
+                        .help("In the playlist: selecting it loops every playlist clip in turn")
+                }
                 if clip.pinned {
                     Image(systemName: "pin.fill").font(.caption2).foregroundStyle(.orange)
                 }
@@ -591,6 +597,7 @@ private struct ClipRow: View {
                 Menu {
                     Button("Rename…", action: startEditing)
                     Button(clip.pinned ? "Unpin" : "Pin", action: onPin)
+                    Button(clip.inPlaylist ? "Remove from Playlist" : "Add to Playlist", action: onPlaylist)
                     Button("Export…", action: onExport)
                     Divider()
                     Button("Delete", role: .destructive, action: onDelete)
