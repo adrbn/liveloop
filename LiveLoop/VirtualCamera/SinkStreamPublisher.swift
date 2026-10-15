@@ -96,9 +96,9 @@ final class SinkStreamPublisher {
             mSelector: CMIOObjectPropertySelector(LiveLoop.OffAirPicture.selector),
             mScope: CMIOObjectPropertyScope(kCMIOObjectPropertyScopeGlobal),
             mElement: CMIOObjectPropertyElement(kCMIOObjectPropertyElementMain))
-        var value = jpeg as CFData
+        var value = jpeg.base64EncodedString() as CFString
         let status = CMIOObjectSetPropertyData(device, &address, 0, nil,
-                                               UInt32(MemoryLayout<CFData>.size), &value)
+                                               UInt32(MemoryLayout<CFString>.size), &value)
         if status != noErr { logger.error("Setting the off-air picture failed: \(status)") }
         return status == noErr
     }

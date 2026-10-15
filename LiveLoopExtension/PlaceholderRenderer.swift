@@ -34,7 +34,6 @@ final class PlaceholderRenderer {
 
     /// The user's own off-air picture (app-fitted to the output size), kept in
     /// the extension's container so it survives restarts. Nil = the default card.
-    private(set) var customImageData: Data?
     private var customImage: CGImage?
 
     private static let customImageURL: URL? = {
@@ -56,7 +55,6 @@ final class PlaceholderRenderer {
         guard let url = Self.customImageURL else { return }
         if data.isEmpty {
             customImage = nil
-            customImageData = nil
             try? FileManager.default.removeItem(at: url)
             return
         }
@@ -79,7 +77,6 @@ final class PlaceholderRenderer {
               let image = CGImageSourceCreateImageAtIndex(
                 source, 0, [kCGImageSourceShouldCacheImmediately: true] as CFDictionary) else { return false }
         customImage = image
-        customImageData = data
         return true
     }
 
