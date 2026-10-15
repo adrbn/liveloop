@@ -73,7 +73,8 @@ final class AppState: ObservableObject {
         host: self, settings: beta, modes: $mode.eraseToAnyPublisher(), liveFrameTap: liveFrameTap)
     private var cancellables = Set<AnyCancellable>()
     private var keyMonitor: Any?
-    private var loadedClipID: UUID?
+    /// The clips currently decoded into the loop engine (several for a playlist).
+    private var loadedClipIDs: [UUID] = []
     private var loadedClipHasSignatures = false
     /// Set once the OS confirms activation — trusted over CMIO device discovery,
     /// which can lag inside a long-running process.
@@ -437,7 +438,8 @@ final class AppState: ObservableObject {
         // changes the selection without eagerly decoding each clip's frames).
         // Beta smart switch also needs the clip's pose signatures.
         let needsSignatures = beta.smartSwitchEnabled && !loadedClipHasSignatures
-        if !loopEngine.isLoaded || loadedClipID != clip.id || needsSignatures {
+        let sequence = library.loopSequence(startingAt: clip).map(\.id)
+        if !loopEngine.isLoaded || loadedClipIDs != sequence || needsSignatures {
             await loadClip(clip)
         }
         guard loopEngine.isLoaded else { return }
@@ -461,16 +463,23 @@ final class AppState: ObservableObject {
         Task { await loadClip(clip) }
     }
 
+    /// Decodes `clip` — or, when it's in a playlist, every playlist clip — into the engine.
     private func loadClip(_ clip: Clip) async {
         loadingClip = true
         defer { loadingClip = false }
-        let url = library.url(for: clip)
-        if let store = await ClipFrameLoader.load(url: url, pipeline: pipeline,
-                                                  withSignatures: beta.smartSwitchEnabled) {
-            loopEngine.load(store)
-            loadedClipID = clip.id
-            loadedClipHasSignatures = !store.signatures.isEmpty
+        let sequence = library.loopSequence(startingAt: clip)
+        var stores: [ClipFrameStore] = []
+        for item in sequence {
+            if let store = await ClipFrameLoader.load(url: library.url(for: item), pipeline: pipeline,
+                                                      withSignatures: beta.smartSwitchEnabled) {
+                stores.append(store)
+            }
         }
+        guard !stores.isEmpty else { return }
+        let store = ClipFrameStore.joined(stores)
+        loopEngine.load(store)
+        loadedClipIDs = sequence.map(\.id)
+        loadedClipHasSignatures = !store.signatures.isEmpty
     }
 
     // MARK: - Recording

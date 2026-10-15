@@ -73,7 +73,7 @@ https://github.com/user-attachments/assets/1038b4cf-f2fe-4d04-b8ec-d606f18a1b70
 | **Global shortcut** | `⌥⌘L` by default; pick another combination in Settings if it clashes |
 | **Live preview** | Shows exactly what others see, plus a small view of your real camera while the loop plays |
 | **Picture quality** | Full 1080p, or a softer 720p that makes the loop even harder to spot |
-| **Clip library** | Unlimited clips. Record 1–30 s or import any `.mov` / `.mp4`. Rename, pin, export |
+| **Clip library** | Unlimited clips. Record 1–30 s or import any `.mov` / `.mp4`. Rename, pin, export. Add clips to a playlist to loop them in turn |
 | **Keyboard-friendly** | `↑` `↓` to switch clips, `⌫` to delete, `⌘Z` to undo |
 | **Your camera name** | Rename the virtual camera to whatever you want it to show up as in the camera menu |
 | **Menu-bar app** | Lives next to the clock: no Dock icon, no window in your way |

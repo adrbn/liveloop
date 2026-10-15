@@ -104,6 +104,21 @@ final class ClipLibrary: ObservableObject {
         update(clip) { $0.pinned = pinned }
     }
 
+    func setInPlaylist(_ clip: Clip, _ inPlaylist: Bool) {
+        update(clip) { $0.inPlaylist = inPlaylist }
+    }
+
+    /// What selecting `clip` loops: the whole playlist (in library order,
+    /// starting from `clip`) when it belongs to one of two or more clips,
+    /// otherwise just the clip.
+    func loopSequence(startingAt clip: Clip) -> [Clip] {
+        let playlist = clips.filter(\.inPlaylist)
+        guard playlist.count > 1, let start = playlist.firstIndex(where: { $0.id == clip.id }) else {
+            return [clip]
+        }
+        return Array(playlist[start...] + playlist[..<start])
+    }
+
     /// Copies a clip's video out to a user-chosen destination (export feature).
     func export(_ clip: Clip, to destination: URL) throws {
         let source = url(for: clip)
