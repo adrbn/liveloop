@@ -14,6 +14,7 @@ import AppKit
 import AVFoundation
 import CoreMedia
 import CoreVideo
+import Sparkle
 
 struct CameraOption: Identifiable, Hashable {
     let id: String   // AVCaptureDevice.uniqueID
@@ -68,6 +69,9 @@ final class AppState: ObservableObject {
     private let router: FrameRouter
     private let recorder: ClipRecorder
     private let hotkeys = HotkeyManager()
+    /// Checks the appcast published with each GitHub release (SUFeedURL).
+    private let updater = SPUStandardUpdaterController(
+        startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
     private let liveFrameTap = LiveFrameTap()
     private(set) lazy var betaController = BetaController(
         host: self, settings: beta, modes: $mode.eraseToAnyPublisher(), liveFrameTap: liveFrameTap)
@@ -148,6 +152,7 @@ final class AppState: ObservableObject {
 
         selectedClipID = library.clips.first?.id
         refreshExtensionStatus()
+        upgradeExtensionIfNeeded()
         // Keep "installed?" live: the virtual camera can appear/disappear while
         // the app runs (install, reinstall, replace) — never cache it once.
         SinkStreamPublisher.observeDeviceChanges { [weak self] in
@@ -295,6 +300,7 @@ final class AppState: ObservableObject {
                     // The OS confirmed activation — trust it immediately.
                     self.osConfirmedInstalled = true
                     self.extensionInstalled = true
+                    UserDefaults.standard.set(Self.appBuild, forKey: Self.extensionBuildKey)
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                         if self.isEngaged { self.reconnectSink() }
                     }
@@ -561,6 +567,22 @@ final class AppState: ObservableObject {
     func installExtension() {
         notify(.working, "Setting up the virtual camera…", sticky: true)
         extensionManager.install()
+    }
+
+    private static let extensionBuildKey = "extensionBuild"
+    private static let appBuild = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
+
+    /// After an update, activate the camera extension bundled with this build,
+    /// so nobody has to click Reinstall. A fresh install is left to setup.
+    private func upgradeExtensionIfNeeded() {
+        guard extensionInstalled,
+              UserDefaults.standard.string(forKey: Self.extensionBuildKey) != Self.appBuild else { return }
+        installExtension()
+    }
+
+    func checkForUpdates() {
+        NSApp.activate(ignoringOtherApps: true)   // a menu-bar app's window would open behind
+        updater.checkForUpdates(nil)
     }
 
     func removeExtension() {

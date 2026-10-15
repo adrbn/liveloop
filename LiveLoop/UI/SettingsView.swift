@@ -61,6 +61,10 @@ private struct SettingsTabs: View {
             Toggle("Start camera automatically on launch", isOn: $settings.autoEngageOnLaunch)
 
             Button("Refresh camera list") { app.refreshCameras() }
+
+            LabeledContent("Updates") {
+                Button("Check for Updates…") { app.checkForUpdates() }
+            }
         }
         .formStyle(.grouped)
     }
