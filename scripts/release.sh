@@ -96,7 +96,7 @@ step "Writing the update feed"
 # Sparkle reads releases/latest/download/appcast.xml: publish dist/appcast.xml
 # with the DMG. Signed with the EdDSA key "liveloop" in the login keychain.
 FEED="build/appcast"
-rm -rf "$FEED" && mkdir -p "$FEED"
+rm -rf "$FEED" dist/appcast.xml && mkdir -p "$FEED"   # only the latest build: older ones point at a replaced DMG
 cp "$DMG" "$FEED/"
 NOTES="dist/release-notes-$VERSION.md"
 [ -f "$NOTES" ] && cp "$NOTES" "$FEED/$(basename "$DMG" .dmg).md" || note "no $NOTES: the update prompt will show no notes."
