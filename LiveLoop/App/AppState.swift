@@ -303,6 +303,9 @@ final class AppState: ObservableObject {
                     UserDefaults.standard.set(Self.appBuild, forKey: Self.extensionBuildKey)
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                         if self.isEngaged { self.reconnectSink() }
+                        // A replaced camera starts with the name it saved, which
+                        // an older build may never have received.
+                        SinkStreamPublisher.setCameraName(LiveLoop.cameraName(from: self.settings.cameraName))
                     }
                     self.notify(.success, "Virtual camera ready ✓")
                 case .removed:
