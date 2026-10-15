@@ -48,6 +48,11 @@ final class Settings: ObservableObject {
     @Published var switchStyle: SwitchStyle {
         didSet { defaults.set(switchStyle.rawValue, forKey: Key.switchStyle) }
     }
+    /// The virtual camera shows the user's own picture instead of the LiveLoop
+    /// card while nothing is sent. The picture itself lives in the extension.
+    @Published var hasOffAirPicture: Bool {
+        didSet { defaults.set(hasOffAirPicture, forKey: Key.hasOffAirPicture) }
+    }
 
     init() {
         cameraName = defaults.string(forKey: LiveLoop.DefaultsKey.cameraName) ?? LiveLoop.defaultCameraName
@@ -61,6 +66,7 @@ final class Settings: ObservableObject {
         autoEngageOnLaunch = defaults.bool(forKey: Key.autoEngage)
         outputQuality = OutputQuality(storedValue: defaults.string(forKey: Key.outputQuality))
         switchStyle = SwitchStyle(storedValue: defaults.string(forKey: Key.switchStyle))
+        hasOffAirPicture = defaults.bool(forKey: Key.hasOffAirPicture)
     }
 
     /// Human-readable form of the current hotkey, e.g. "⌥⌘L".
@@ -79,5 +85,6 @@ final class Settings: ObservableObject {
         static let autoEngage = "autoEngageOnLaunch"
         static let outputQuality = "outputQuality"
         static let switchStyle = "switchStyle"
+        static let hasOffAirPicture = "hasOffAirPicture"
     }
 }

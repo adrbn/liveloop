@@ -9,8 +9,29 @@
 
 import XCTest
 import CoreVideo
+import CoreImage
 
 final class ImagePipelineQualityTests: XCTestCase {
+
+    func testOffAirPictureIsFittedToTheOutputFrame() throws {
+        // A portrait picture comes back as a full-frame (cropped) 1080p JPEG.
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("offair-\(UUID().uuidString).png")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let image = CIImage(color: .red).cropped(to: CGRect(x: 0, y: 0, width: 300, height: 600))
+        try CIContext().writePNGRepresentation(of: image, to: url, format: .RGBA8,
+                                               colorSpace: CGColorSpaceCreateDeviceRGB())
+        let jpeg = try XCTUnwrap(ImagePipeline().outputJPEG(fromImageAt: url))
+        let decoded = try XCTUnwrap(CIImage(data: jpeg))
+        XCTAssertEqual(decoded.extent.size, CGSize(width: Int(LiveLoop.frameWidth), height: Int(LiveLoop.frameHeight)))
+        XCTAssertLessThanOrEqual(jpeg.count, LiveLoop.OffAirPicture.maxBytes)
+    }
+
+    func testOffAirPictureRejectsNonImages() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("offair-\(UUID().uuidString).png")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try Data("not a picture".utf8).write(to: url)
+        XCTAssertNil(ImagePipeline().outputJPEG(fromImageAt: url))
+    }
 
     func testFullHDKeepsFineDetail() throws {
         let pipeline = ImagePipeline()
