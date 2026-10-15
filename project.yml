@@ -6,6 +6,11 @@ options:
   createIntermediateGroups: true
   defaultConfig: Release
 
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: "2.6.0"
+
 settings:
   base:
     DEVELOPMENT_TEAM: 2TWQF4T93E
@@ -13,7 +18,7 @@ settings:
     CODE_SIGN_IDENTITY: "Apple Development"
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "1.3.0"
-    CURRENT_PROJECT_VERSION: "12"
+    CURRENT_PROJECT_VERSION: "17"
     ENABLE_HARDENED_RUNTIME: YES
 
 targets:
@@ -41,6 +46,10 @@ targets:
         # Beta features (all opt-in, off by default).
         NSSpeechRecognitionUsageDescription: "Only for the beta Name alert: LiveLoop listens for your name while you're on the loop. Speech is transcribed on your Mac and never recorded or sent anywhere."
         NSAudioCaptureUsageDescription: "Only for the beta Name alert: LiveLoop listens to your meeting's audio for your name while you're on the loop. It's transcribed on your Mac and never recorded or sent anywhere."
+        # Sparkle: each GitHub release carries an appcast.xml (see scripts/release.sh).
+        SUFeedURL: https://github.com/adrbn/liveloop/releases/latest/download/appcast.xml
+        SUPublicEDKey: "9cqTwuJ7qDeyTASO7waRHg9Oks0qsKRlDLRi+7ED1t4="
+        SUEnableAutomaticChecks: true
         CFBundleURLTypes:
           - CFBundleURLName: com.adrbn.LiveLoop.automation
             CFBundleURLSchemes: [liveloop]
@@ -52,6 +61,7 @@ targets:
         ENABLE_APP_SANDBOX: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     dependencies:
+      - package: Sparkle
       - target: LiveLoopExtension
         embed: true
         codeSign: true

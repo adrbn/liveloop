@@ -24,6 +24,7 @@ PROFILE="${LIVELOOP_NOTARY_PROFILE:-LiveLoop}"
 ARCHIVE="build/LiveLoop.xcarchive"
 EXPORT="build/export"
 APP="$EXPORT/LiveLoop.app"
+PACKAGES="build/SourcePackages"   # Sparkle's tools land in $PACKAGES/artifacts
 
 # notarize NAME FILE : submits FILE, waits, and stops with Apple's report unless accepted.
 notarize() {
@@ -63,7 +64,7 @@ ok "$(grep -Eo 'Executed [0-9]+ tests, with 0 failures' "$LOG_DIR/tests.log" | t
 step "Archiving (automatic signing, team $TEAM)"
 rm -rf "$ARCHIVE"
 run archive xcodebuild archive -project LiveLoop.xcodeproj -scheme LiveLoop -configuration Release \
-  -destination 'generic/platform=macOS' -archivePath "$ARCHIVE" \
+  -destination 'generic/platform=macOS' -archivePath "$ARCHIVE" -clonedSourcePackagesDirPath "$PACKAGES" \
   CODE_SIGN_STYLE=Automatic DEVELOPMENT_TEAM="$TEAM" -allowProvisioningUpdates
 ok "$ARCHIVE"
 
@@ -91,6 +92,19 @@ notarize notarize-dmg "$DMG"
 run staple-dmg xcrun stapler staple "$DMG"
 ok "notarized and stapled"
 
+step "Writing the update feed"
+# Sparkle reads releases/latest/download/appcast.xml: publish dist/appcast.xml
+# with the DMG. Signed with the EdDSA key "liveloop" in the login keychain.
+FEED="build/appcast"
+rm -rf "$FEED" dist/appcast.xml && mkdir -p "$FEED"   # only the latest build: older ones point at a replaced DMG
+cp "$DMG" "$FEED/"
+NOTES="dist/release-notes-$VERSION.md"
+[ -f "$NOTES" ] && cp "$NOTES" "$FEED/$(basename "$DMG" .dmg).md" || note "no $NOTES: the update prompt will show no notes."
+run appcast "$PACKAGES/artifacts/sparkle/Sparkle/bin/generate_appcast" --account liveloop --embed-release-notes \
+  --download-url-prefix "https://github.com/adrbn/liveloop/releases/download/v$VERSION/" \
+  --link https://github.com/adrbn/liveloop -o dist/appcast.xml "$FEED"
+ok "dist/appcast.xml"
+
 step "Verifying"
 run verify-app codesign --verify --deep --strict "$APP"
 spctl -a -t exec -vv "$APP" 2>&1 | grep 'source=Notarized Developer ID' >/dev/null \
@@ -100,3 +114,4 @@ ok "Gatekeeper accepts the app and the DMG"
 
 printf '\nLiveLoop %s (build %s) is ready in %dm%02ds:\n  %s\n' \
   "$VERSION" "$BUILD" $((SECONDS / 60)) $((SECONDS % 60)) "$DMG"
+printf '  dist/appcast.xml (upload it to the release too)\n'

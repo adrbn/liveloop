@@ -61,6 +61,10 @@ private struct SettingsTabs: View {
             Toggle("Start camera automatically on launch", isOn: $settings.autoEngageOnLaunch)
 
             Button("Refresh camera list") { app.refreshCameras() }
+
+            LabeledContent("Updates") {
+                Button("Check for Updates…") { app.checkForUpdates() }
+            }
         }
         .formStyle(.grouped)
     }
@@ -187,7 +191,7 @@ private struct SettingsTabs: View {
         Form {
             Section {
                 TextField("Camera name", text: $settings.cameraName)
-                Text("Shown in Zoom, Meet, Teams and other apps. Reinstall the camera below to apply a new name.")
+                Text("Shown in Zoom, Meet, Teams and other apps. A new name applies right away while no app uses the camera, otherwise next time the camera starts.")
                     .font(.caption).foregroundStyle(.secondary)
                 LabeledContent("Off-air picture") {
                     HStack {

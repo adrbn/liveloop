@@ -56,6 +56,10 @@ struct LiveLoopApp: App {
             NSApp.activate(ignoringOtherApps: true)
         }
         appDelegate.showSetup = showSetup
+        // Only when there is something to set up. A camera that is already
+        // installed needs nothing, and the window would be in the way at
+        // every launch — the Dock icon and the menu still open it by hand.
+        guard !appState.extensionInstalled else { return }
         if AVCaptureDevice.authorizationStatus(for: .video) == .notDetermined { showSetup() }
     }
 
