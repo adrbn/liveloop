@@ -91,15 +91,28 @@ final class SinkStreamPublisher {
     /// extension, which keeps it. False if the virtual camera isn't installed
     /// or refused it.
     static func setOffAirPicture(_ jpeg: Data) -> Bool {
+        setDeviceString(jpeg.base64EncodedString(), selector: LiveLoop.OffAirPicture.selector)
+    }
+
+    /// Sends the virtual camera's display name; the extension applies it when
+    /// it next starts. False if the virtual camera isn't installed or refused it.
+    @discardableResult
+    static func setCameraName(_ name: String) -> Bool {
+        setDeviceString(name, selector: LiveLoop.CameraName.selector)
+    }
+
+    /// Sets a custom device property. Always a CFString: CMIO silently drops
+    /// data values on custom properties.
+    private static func setDeviceString(_ string: String, selector: UInt32) -> Bool {
         guard let device = findDevice(uid: LiveLoop.deviceUID) else { return false }
         var address = CMIOObjectPropertyAddress(
-            mSelector: CMIOObjectPropertySelector(LiveLoop.OffAirPicture.selector),
+            mSelector: CMIOObjectPropertySelector(selector),
             mScope: CMIOObjectPropertyScope(kCMIOObjectPropertyScopeGlobal),
             mElement: CMIOObjectPropertyElement(kCMIOObjectPropertyElementMain))
-        var value = jpeg.base64EncodedString() as CFString
+        var value = string as CFString
         let status = CMIOObjectSetPropertyData(device, &address, 0, nil,
                                                UInt32(MemoryLayout<CFString>.size), &value)
-        if status != noErr { logger.error("Setting the off-air picture failed: \(status)") }
+        if status != noErr { logger.error("Setting device property \(selector) failed: \(status)") }
         return status == noErr
     }
 

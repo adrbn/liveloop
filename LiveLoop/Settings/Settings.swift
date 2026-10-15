@@ -2,9 +2,9 @@
 //  Settings.swift
 //  LiveLoop
 //
-//  User preferences, persisted to the shared App Group defaults so the camera
-//  extension can read the ones it cares about (the virtual-camera name). Every
-//  former "Pro" toggle lives here and is free.
+//  User preferences, persisted to the App Group defaults. The camera extension
+//  can't read them (it runs as another user); AppState sends it the camera
+//  name. Every former "Pro" toggle lives here and is free.
 //
 
 import Foundation

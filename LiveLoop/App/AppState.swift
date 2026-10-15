@@ -151,7 +151,12 @@ final class AppState: ObservableObject {
         // Keep "installed?" live: the virtual camera can appear/disappear while
         // the app runs (install, reinstall, replace) — never cache it once.
         SinkStreamPublisher.observeDeviceChanges { [weak self] in
-            Task { @MainActor in self?.refreshExtensionStatus() }
+            Task { @MainActor in
+                guard let self else { return }
+                self.refreshExtensionStatus()
+                // A freshly installed camera doesn't know the name yet.
+                SinkStreamPublisher.setCameraName(LiveLoop.cameraName(from: self.settings.cameraName))
+            }
         }
         installClipKeyMonitor()
         observeConsumerSignals()
@@ -636,6 +641,14 @@ final class AppState: ObservableObject {
             .store(in: &cancellables)
         settings.$switchStyle
             .sink { [router] style in router.setSwitchStyle(style) }
+            .store(in: &cancellables)
+        // The extension can't read our defaults, so it gets the name as a device
+        // property (also sent at launch). Debounced: the field updates per keystroke.
+        settings.$cameraName
+            .map { LiveLoop.cameraName(from: $0) }
+            .removeDuplicates()
+            .debounce(for: .milliseconds(500), scheduler: RunLoop.main)
+            .sink { SinkStreamPublisher.setCameraName($0) }
             .store(in: &cancellables)
 
         settings.$lagEnabled
