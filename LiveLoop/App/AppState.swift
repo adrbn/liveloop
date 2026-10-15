@@ -83,6 +83,8 @@ final class AppState: ObservableObject {
     /// Set once the OS confirms activation — trusted over CMIO device discovery,
     /// which can lag inside a long-running process.
     private var osConfirmedInstalled = false
+    /// One automatic retry per launch when the camera doesn't come back.
+    private var retriedActivation = false
     /// Clips deleted this session, most-recent last — the ⌘Z undo stack.
     private var deletionUndoStack: [Clip] = []
     /// True when the current engagement was started automatically because a
@@ -306,6 +308,13 @@ final class AppState: ObservableObject {
                         // A replaced camera starts with the name it saved, which
                         // an older build may never have received.
                         SinkStreamPublisher.setCameraName(LiveLoop.cameraName(from: self.settings.cameraName))
+                    }
+                    // Replacing the extension sometimes leaves macOS with no
+                    // camera running at all; a second activation brings it back.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+                        guard !self.retriedActivation, !SinkStreamPublisher.deviceIsAvailable() else { return }
+                        self.retriedActivation = true
+                        self.extensionManager.install()
                     }
                     self.notify(.success, "Virtual camera ready ✓")
                 case .removed:
