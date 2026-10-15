@@ -470,6 +470,12 @@ struct MenuContentView: View {
 
             Spacer()
 
+            Button { app.checkForUpdates() } label: {
+                Image(systemName: "arrow.triangle.2.circlepath").font(.system(size: 13))
+            }
+            .help("Check for Updates")
+            .accessibilityLabel("Check for Updates")
+
             Button {
                 openSettings()
                 NSApp.activate(ignoringOtherApps: true)
