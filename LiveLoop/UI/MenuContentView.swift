@@ -41,6 +41,8 @@ struct MenuContentView: View {
         }
         .padding(14)
         .frame(width: panelWidth)
+        // The default menu-bar glass lets busy windows show through the panel.
+        .background(Color(nsColor: .windowBackgroundColor).opacity(0.92))
         .tint(.brand)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: app.banner)
         .animation(reduceMotion ? nil : .spring(response: 0.34, dampingFraction: 0.9), value: app.isEngaged)
@@ -473,7 +475,10 @@ struct MenuContentView: View {
 
             // macOS only opens Video Effects for an app that's using a camera.
             if app.isEngaged || app.isCapturingClip {
-                Button { AVCaptureDevice.showSystemUserInterface(.videoEffects) } label: {
+                Button {
+                    app.panelWindow?.close()   // the panel would sit on top of the menu
+                    AVCaptureDevice.showSystemUserInterface(.videoEffects)
+                } label: {
                     Image(systemName: "camera.filters").font(.system(size: 13))
                 }
                 .help("Video Effects: background, blur, lighting")

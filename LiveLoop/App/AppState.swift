@@ -381,7 +381,6 @@ final class AppState: ObservableObject {
         publisher.disconnect()
         isEngaged = false
         sinkConnected = false
-        notify(.info, "Camera off.")
     }
 
     // MARK: - Engage on demand
