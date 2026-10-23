@@ -22,11 +22,16 @@ final class CameraCaptureManager: NSObject {
     private(set) var currentDeviceID: String?
     private let frameLock = NSLock()
     private var deliveredFrame = false
+    /// Set by `start` until its queued block runs: a stop queued ahead of it
+    /// (slow with Video Effects on) must not count the old session's frames.
+    private var startPending = false
+    /// Frames stamped before this belong to the previous session.
+    private var startedAt = CMTime.zero
 
-    /// Whether a frame has arrived since the session last started. A cold
-    /// webcam can take 10 s+ to send one (e.g. with macOS Background effects on).
+    /// Whether a frame has arrived since the last `start`. A cold webcam can
+    /// take 10 s+ to send one (e.g. with macOS Background effects on).
     var hasDeliveredFrame: Bool {
-        frameLock.withLock { deliveredFrame }
+        frameLock.withLock { !startPending && deliveredFrame }
     }
 
     init(queue: DispatchQueue) {
@@ -62,7 +67,13 @@ final class CameraCaptureManager: NSObject {
     /// Starts (or restarts) capture using the given device UID, or the system
     /// default when `nil`.
     func start(deviceID: String?) {
+        frameLock.withLock { startPending = true }
         queue.async {
+            self.frameLock.withLock {
+                self.deliveredFrame = false
+                self.startPending = false
+                self.startedAt = CMClockGetTime(CMClockGetHostTimeClock())
+            }
             self.session.beginConfiguration()
             for input in self.session.inputs {
                 self.session.removeInput(input)
@@ -82,7 +93,6 @@ final class CameraCaptureManager: NSObject {
             }
             self.session.commitConfiguration()
             if !self.session.isRunning {
-                self.frameLock.withLock { self.deliveredFrame = false }
                 self.session.startRunning()
             }
         }
@@ -108,7 +118,8 @@ extension CameraCaptureManager: AVCaptureVideoDataOutputSampleBufferDelegate {
     func captureOutput(_ output: AVCaptureOutput,
                        didOutput sampleBuffer: CMSampleBuffer,
                        from connection: AVCaptureConnection) {
-        frameLock.withLock { deliveredFrame = true }
+        let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+        frameLock.withLock { if pts > startedAt { deliveredFrame = true } }
         onSampleBuffer?(sampleBuffer)
     }
 }
