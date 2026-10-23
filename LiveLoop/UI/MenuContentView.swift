@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import AVFoundation
 import UniformTypeIdentifiers
 
 struct MenuContentView: View {
@@ -469,6 +470,15 @@ struct MenuContentView: View {
             .accessibilityLabel("Support LiveLoop on Ko-fi")
 
             Spacer()
+
+            // macOS only opens Video Effects for an app that's using a camera.
+            if app.isEngaged || app.isCapturingClip {
+                Button { AVCaptureDevice.showSystemUserInterface(.videoEffects) } label: {
+                    Image(systemName: "camera.filters").font(.system(size: 13))
+                }
+                .help("Video Effects: background, blur, lighting")
+                .accessibilityLabel("Video Effects")
+            }
 
             Button { app.checkForUpdates() } label: {
                 Image(systemName: "arrow.triangle.2.circlepath").font(.system(size: 13))
