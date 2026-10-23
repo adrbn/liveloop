@@ -151,7 +151,7 @@ struct MenuContentView: View {
         .background(Color.black)
         .overlay {
             if app.isCameraStarting, previewContent == .output || previewContent == .selfView {
-                ProgressView().controlSize(.large).tint(.white)
+                StartingSpinner()
             }
         }
         .overlay(alignment: .topLeading) { modeBadge.padding(8) }
@@ -655,5 +655,21 @@ private struct ClipRow: View {
         let name = editText.trimmingCharacters(in: .whitespacesAndNewlines)
         if !name.isEmpty, name != clip.name { onRename(name) }
         isEditing = false
+    }
+}
+
+/// White arc for the black preview: the system spinner stays dark gray there.
+private struct StartingSpinner: View {
+    @State private var spinning = false
+
+    var body: some View {
+        Circle()
+            .trim(from: 0, to: 0.7)
+            .stroke(.white.opacity(0.9), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+            .frame(width: 28, height: 28)
+            .rotationEffect(.degrees(spinning ? 360 : 0))
+            .animation(.linear(duration: 0.9).repeatForever(autoreverses: false), value: spinning)
+            .onAppear { spinning = true }
+            .accessibilityLabel("Starting camera")
     }
 }
