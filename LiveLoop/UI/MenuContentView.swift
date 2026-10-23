@@ -149,6 +149,11 @@ struct MenuContentView: View {
         .frame(maxWidth: .infinity)
         .frame(height: 176) // 312pt content width ≈ 16:9
         .background(Color.black)
+        .overlay {
+            if app.isCameraStarting, previewContent == .output || previewContent == .selfView {
+                ProgressView().controlSize(.large).tint(.white)
+            }
+        }
         .overlay(alignment: .topLeading) { modeBadge.padding(8) }
         .overlay(alignment: .topTrailing) {
             if app.isEngaged, app.isLoopActive { selfViewPIP.padding(8) }
@@ -281,7 +286,7 @@ struct MenuContentView: View {
 
     private var captionText: String {
         if previewContent == .selfView {
-            return app.isWarmingUp ? "Starting your webcam…" : "Recording · only you see this"
+            return app.isWarmingUp ? "Only you see this" : "Recording · only you see this"
         }
         return app.isLoopActive ? "Viewers see your loop" : "Viewers see your live camera"
     }
@@ -327,7 +332,6 @@ struct MenuContentView: View {
     }
 
     private var recordTitle: String {
-        if app.isWarmingUp { return "Starting camera…" }
         if app.isRecording { return "Stop · \(app.recordSecondsLeft)s" }
         return "Record \(Int(app.settings.recordDurationSeconds))s clip"
     }
@@ -513,7 +517,7 @@ struct MenuContentView: View {
     // MARK: - Status helpers
 
     private var statusText: String {
-        if app.isWarmingUp { return "Starting camera…" }
+        if app.isWarmingUp || app.isCameraStarting { return "Starting camera…" }
         if app.isRecording { return "Recording…" }
         switch app.mode {
         case .loop: return "Looping — you can step away"

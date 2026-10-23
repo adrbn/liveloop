@@ -45,6 +45,9 @@ final class AppState: ObservableObject {
     @Published private(set) var isRecording = false
     /// True while a cold webcam starts up just before a recording begins.
     @Published private(set) var isWarmingUp = false
+    /// The webcam is on but hasn't sent a frame yet (can take 10 s+ with
+    /// macOS Video Effects on). The panel shows a spinner meanwhile.
+    @Published private(set) var isCameraStarting = false
     @Published private(set) var sinkConnected = false
     @Published private(set) var extensionInstalled = false
     @Published private(set) var cameras: [CameraOption] = []
@@ -133,7 +136,8 @@ final class AppState: ObservableObject {
             router.handleLiveFrame(sampleBuffer)
             recorder.append(sampleBuffer)
             if let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) {
-                DispatchQueue.main.async {
+                DispatchQueue.main.async { [weak self] in
+                    if self?.isCameraStarting == true { self?.isCameraStarting = false }
                     livePreview.enqueue(pixelBuffer)
                     windowLivePreview.enqueue(pixelBuffer)
                 }
@@ -362,7 +366,7 @@ final class AppState: ObservableObject {
         engagedOnDemand = onDemand
         reconnectSink()
         // Already on for a clip: keep it (a restart would cut into the recording).
-        if webcam.claim(.virtualCamera) { camera.start(deviceID: settings.selectedCameraID) }
+        if webcam.claim(.virtualCamera) { startCamera(settings.selectedCameraID) }
         router.engageLive()
         isEngaged = true
         // Started by hand, the LIVE badge says it all; only explain a camera
@@ -527,7 +531,7 @@ final class AppState: ObservableObject {
                 return
             }
             let coldStart = webcam.claim(.clip)
-            if coldStart { camera.start(deviceID: settings.selectedCameraID) }
+            if coldStart { startCamera(settings.selectedCameraID) }
             guard await waitForFirstFrame() else {
                 isWarmingUp = false
                 if webcam.release(.clip) { camera.stop() }
@@ -645,9 +649,14 @@ final class AppState: ObservableObject {
         return nil
     }
 
+    private func startCamera(_ deviceID: String?) {
+        isCameraStarting = true
+        camera.start(deviceID: deviceID)
+    }
+
     func selectCamera(_ id: String?) {
         settings.selectedCameraID = id
-        if isEngaged { camera.start(deviceID: id) }
+        if isEngaged { startCamera(id) }
     }
 
     // MARK: - Private
