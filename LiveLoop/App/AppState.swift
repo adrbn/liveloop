@@ -510,6 +510,8 @@ final class AppState: ObservableObject {
     /// A cold webcam needs a moment to start and settle its exposure; recording
     /// straight away would bake a dark first second into the loop.
     private static let warmUpNanoseconds: UInt64 = 1_500_000_000
+    /// How long to wait for a cold webcam's first frame before giving up.
+    private static let firstFrameTimeout: Duration = .seconds(20)
 
     /// Warming up or recording: the webcam is on for a clip.
     var isCapturingClip: Bool { isRecording || isWarmingUp }
@@ -525,13 +527,28 @@ final class AppState: ObservableObject {
                 notify(.failure, "Camera access denied — enable it in System Settings ▸ Privacy & Security ▸ Camera.", sticky: true)
                 return
             }
-            if webcam.claim(.clip) {
-                camera.start(deviceID: settings.selectedCameraID)
-                try? await Task.sleep(nanoseconds: Self.warmUpNanoseconds)
+            let coldStart = webcam.claim(.clip)
+            if coldStart { camera.start(deviceID: settings.selectedCameraID) }
+            guard await waitForFirstFrame() else {
+                isWarmingUp = false
+                if webcam.release(.clip) { camera.stop() }
+                notify(.failure, "Your camera didn’t send a picture. Try recording again.")
+                return
             }
+            if coldStart { try? await Task.sleep(nanoseconds: Self.warmUpNanoseconds) }
             isWarmingUp = false
             await record()
         }
+    }
+
+    /// Polls rather than racing the first frame: it only runs before a clip.
+    private func waitForFirstFrame() async -> Bool {
+        let deadline = ContinuousClock.now + Self.firstFrameTimeout
+        while !camera.hasDeliveredFrame {
+            guard ContinuousClock.now < deadline else { return false }
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+        return true
     }
 
     private func record() async {

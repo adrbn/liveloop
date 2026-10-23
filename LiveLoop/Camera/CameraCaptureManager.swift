@@ -20,6 +20,14 @@ final class CameraCaptureManager: NSObject {
     private let videoOutput = AVCaptureVideoDataOutput()
     private let queue: DispatchQueue
     private(set) var currentDeviceID: String?
+    private let frameLock = NSLock()
+    private var deliveredFrame = false
+
+    /// Whether a frame has arrived since the session last started. A cold
+    /// webcam can take 10 s+ to send one (e.g. with macOS Background effects on).
+    var hasDeliveredFrame: Bool {
+        frameLock.withLock { deliveredFrame }
+    }
 
     init(queue: DispatchQueue) {
         self.queue = queue
@@ -74,6 +82,7 @@ final class CameraCaptureManager: NSObject {
             }
             self.session.commitConfiguration()
             if !self.session.isRunning {
+                self.frameLock.withLock { self.deliveredFrame = false }
                 self.session.startRunning()
             }
         }
@@ -99,6 +108,7 @@ extension CameraCaptureManager: AVCaptureVideoDataOutputSampleBufferDelegate {
     func captureOutput(_ output: AVCaptureOutput,
                        didOutput sampleBuffer: CMSampleBuffer,
                        from connection: AVCaptureConnection) {
+        frameLock.withLock { deliveredFrame = true }
         onSampleBuffer?(sampleBuffer)
     }
 }
