@@ -77,6 +77,12 @@ struct BetaSettingsView: View {
                 if minutes > 0 { controller.requestNotificationPermission() }
             }
 
+            Toggle(isOn: $settings.keepActiveEnabled) {
+                FeatureLabel(title: "Keep me Active",
+                             subtitle: "Stops Teams, Slack & co. from marking you Away while you're on the loop.",
+                             symbol: "cursorarrow.motionlines", tint: .green)
+            }
+
             Toggle(isOn: $settings.loopTimerEnabled) {
                 FeatureLabel(title: "Loop timer",
                              subtitle: "Shows how long you've been away, in the menu bar.",
@@ -85,8 +91,13 @@ struct BetaSettingsView: View {
         } header: {
             Text("While You're Away")
         } footer: {
-            if settings.autoAwayEnabled {
-                caption("Auto away checks your camera for a face a few times a second, with on-device Vision. Frames are never saved. It only ends loops it started.")
+            VStack(alignment: .leading, spacing: 4) {
+                if settings.autoAwayEnabled {
+                    caption("Auto away checks your camera for a face a few times a second, with on-device Vision. Frames are never saved. It only ends loops it started.")
+                }
+                if settings.keepActiveEnabled {
+                    caption("Keep me Active moves the pointer by one pixel and back after a minute without input, only while you're on the loop. It needs the Accessibility permission.")
+                }
             }
         }
     }

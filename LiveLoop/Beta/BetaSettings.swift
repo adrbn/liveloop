@@ -61,6 +61,11 @@ final class BetaSettings: ObservableObject {
         didSet { defaults.set(autoReturnEnabled, forKey: Key.autoReturn) }
     }
 
+    // Keep me Active (pointer nudge while looping)
+    @Published var keepActiveEnabled: Bool {
+        didSet { defaults.set(keepActiveEnabled, forKey: Key.keepActive) }
+    }
+
     // Smart switch
     @Published var smartSwitchEnabled: Bool {
         didSet { defaults.set(smartSwitchEnabled, forKey: Key.smartSwitch) }
@@ -93,6 +98,7 @@ final class BetaSettings: ObservableObject {
         autoAwayEnabled = defaults.bool(forKey: Key.autoAway)
         autoAwaySeconds = defaults.object(forKey: Key.autoAwaySeconds) as? Double ?? 10
         autoReturnEnabled = defaults.object(forKey: Key.autoReturn) as? Bool ?? true
+        keepActiveEnabled = defaults.bool(forKey: Key.keepActive)
         smartSwitchEnabled = defaults.bool(forKey: Key.smartSwitch)
         connectionProfile = defaults.string(forKey: Key.connectionProfile)
             .flatMap(ConnectionProfile.init(rawValue:)) ?? .off
@@ -110,6 +116,7 @@ final class BetaSettings: ObservableObject {
         static let autoAway = "beta.autoAway"
         static let autoAwaySeconds = "beta.autoAwaySeconds"
         static let autoReturn = "beta.autoReturn"
+        static let keepActive = "beta.keepActive"
         static let smartSwitch = "beta.smartSwitch"
         static let connectionProfile = "beta.connectionProfile"
         static let nameAlert = "beta.nameAlert"

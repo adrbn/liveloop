@@ -19,6 +19,7 @@ final class BetaController {
 
     private let notifier = BetaNotifier()
     private let autoAway: AutoAwayFeature
+    private let keepActive: KeepActiveFeature
     private weak var host: BetaHost?
     private var cancellables = Set<AnyCancellable>()
 
@@ -29,6 +30,7 @@ final class BetaController {
         loopTimer = LoopTimerFeature(settings: settings, notifier: notifier, host: host)
         nameAlert = NameAlertFeature(settings: settings, notifier: notifier, host: host)
         autoAway = AutoAwayFeature(settings: settings, tap: liveFrameTap, host: host)
+        keepActive = KeepActiveFeature(settings: settings, host: host)
 
         modes.removeDuplicates()
             .receive(on: DispatchQueue.main)   // deliver after `mode` has actually changed
@@ -45,6 +47,7 @@ final class BetaController {
     private func modeDidChange(_ mode: FrameRouter.Mode) {
         loopTimer.modeDidChange(mode)
         autoAway.modeDidChange(mode)
+        keepActive.modeDidChange(mode)
         nameAlert.modeDidChange(mode)
     }
 }

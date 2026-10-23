@@ -51,7 +51,7 @@ https://github.com/user-attachments/assets/1038b4cf-f2fe-4d04-b8ec-d606f18a1b70
 - ⌨️ **One shortcut, from inside your meeting.** `⌥⌘L` works system-wide, so you never have to leave the call window to step away or come back.
 - 🔊 **Your audio is untouched.** LiveLoop only provides a camera; your meeting app keeps your mic, so you can still talk, mute and unmute as usual.
 - 🎥 **Works where your camera works.** Zoom, Google Meet, Microsoft Teams, Slack, FaceTime, OBS: anything with a camera picker.
-- 🔒 **Nothing leaves your Mac.** No account, no network access, no telemetry. Your real webcam switches on when a call starts using LiveLoop, and off again when it ends.
+- 🔒 **Nothing leaves your Mac.** No account, no telemetry. The only network request is the update check. Your real webcam switches on when a call starts using LiveLoop, and off again when it ends.
 - 💸 **Free, with no paid tier.** Unlimited clips, custom shortcut, simulated lag, import and export. No trial, no subscription, and the code is open source (GPL-3.0).
 
 ## Get started
@@ -93,6 +93,7 @@ New and still being polished. Each one is **off until you switch it on**, and al
 | **Auto away** | Nobody at the desk for a few seconds? It switches to the loop on its own, and goes live again when you sit back down. Face detection runs on-device |
 | **Name alert** | While you're on the loop, a chime and a notification when someone says your name. Listens to the meeting audio (works with headphones) or your mic. Speech is transcribed on your Mac only |
 | **Connection styles** | Three more styles for Simulated lag (**Settings ▸ Loop**): *Shaky Wi-Fi*, *4G on the go* or *Dropping out*, with realistic freezes and blocky patches instead of the plain stutter |
+| **Keep me Active** | While you're on the loop and the Mac has been idle for a minute, nudges the pointer by one pixel and back so Teams, Slack & co. don't mark you Away. Stops when you go live. Asks for the Accessibility permission |
 | **Loop timer** | How long you've been away, right next to the menu-bar icon, plus an optional "Still away?" reminder |
 | **Automations** | Shortcuts actions and `liveloop://` links for Stream Deck, Raycast, Alfred or your own scripts |
 
@@ -137,7 +138,7 @@ That's how every virtual camera works on modern macOS; OBS's goes through the sa
 <details>
 <summary><b>Does LiveLoop record my audio or send anything anywhere?</b></summary>
 
-No. LiveLoop has no network code at all: no analytics, no update pings, no account. Your clips stay on your Mac and nowhere else.
+No. No analytics, no account. The only thing LiveLoop fetches is the list of releases from GitHub, once a day, to see if there's an update (Sparkle, the standard Mac updater; no system info is sent). Your clips stay on your Mac and nowhere else.
 
 It never listens to audio either, unless you switch on the beta **Name alert**. Even then it only listens while you're on the loop, and speech recognition is forced to run on your Mac: nothing is recorded, and nothing is sent anywhere. The whole source is right here if you want to check.
 </details>
@@ -158,7 +159,6 @@ LiveLoop ▸ Settings ▸ **Virtual Camera** ▸ **Remove**, then drag LiveLoop 
 
 - **AI frame morphing.** Learned frame interpolation for a perfect one-way loop. (Pose-matched switching is already in beta.)
 - **Per-clip settings** for speed and lag.
-- **In-app updates**, so you never have to download a new version by hand again.
 
 Have an idea or found a bug? [Open an issue](https://github.com/adrbn/liveloop/issues). Every report gets read.
 
