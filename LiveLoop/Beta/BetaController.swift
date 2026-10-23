@@ -30,7 +30,7 @@ final class BetaController {
         loopTimer = LoopTimerFeature(settings: settings, notifier: notifier, host: host)
         nameAlert = NameAlertFeature(settings: settings, notifier: notifier, host: host)
         autoAway = AutoAwayFeature(settings: settings, tap: liveFrameTap, host: host)
-        keepActive = KeepActiveFeature(settings: settings, host: host)
+        keepActive = KeepActiveFeature(settings: settings)
 
         modes.removeDuplicates()
             .receive(on: DispatchQueue.main)   // deliver after `mode` has actually changed

@@ -20,14 +20,12 @@ final class KeepActiveFeature {
     private static let anyInput = CGEventType(rawValue: ~0)!
 
     private let settings: BetaSettings
-    private weak var host: BetaHost?
     private var mode: FrameRouter.Mode = .idle
     private var timer: Timer?
     private var cancellables = Set<AnyCancellable>()
 
-    init(settings: BetaSettings, host: BetaHost) {
+    init(settings: BetaSettings) {
         self.settings = settings
-        self.host = host
         settings.$keepActiveEnabled
             .dropFirst()
             .receive(on: DispatchQueue.main)
@@ -45,11 +43,11 @@ final class KeepActiveFeature {
 
     // MARK: - Private
 
-    /// Shows the system prompt that sends you to Privacy & Security ▸ Accessibility.
+    /// Shows the system prompt (with its own Open System Settings button) when
+    /// LiveLoop isn't allowed in Privacy & Security ▸ Accessibility yet.
     private func requestPermission() {
         let prompt = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
-        guard !AXIsProcessTrustedWithOptions([prompt: true] as CFDictionary) else { return }
-        host?.notify(.info, "Allow LiveLoop in Privacy & Security ▸ Accessibility so Keep me Active can work.", sticky: true)
+        _ = AXIsProcessTrustedWithOptions([prompt: true] as CFDictionary)
     }
 
     private func refresh() {
